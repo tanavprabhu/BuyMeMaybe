@@ -61,18 +61,17 @@ function runFfmpeg(cmd: ffmpeg.FfmpegCommand): Promise<void> {
   });
 }
 
-// Ensures the input video is 9:16 and 1080x1920, scaling and padding as needed.
-export async function ensureVertical1080(videoBytes: Buffer): Promise<Buffer> {
+// Ensures the input video is 1:1 square at 1080×1080, scaling and padding as needed.
+export async function ensureSquare1080(videoBytes: Buffer): Promise<Buffer> {
   const ws = createTempWorkspace();
   try {
     const inPath = writeTempFile(ws, "in.mp4", videoBytes);
-    const outPath = join(ws.workDir, "vertical.mp4");
+    const outPath = join(ws.workDir, "square.mp4");
     ws.paths.push(outPath);
 
-    // This scales the video to fit within 1080x1920, then pads to fill the frame.
     const vf =
-      "scale=1080:1920:force_original_aspect_ratio=decrease," +
-      "pad=1080:1920:(ow-iw)/2:(oh-ih)/2:color=black";
+      "scale=1080:1080:force_original_aspect_ratio=decrease," +
+      "pad=1080:1080:(ow-iw)/2:(oh-ih)/2:color=black";
 
     await runFfmpeg(
       ffmpeg(inPath)
@@ -121,7 +120,7 @@ export async function muxVoiceover(videoBytes: Buffer, mp3Bytes: Buffer): Promis
   }
 }
 
-// Burns TikTok-style captions into the video using an SRT subtitle filter.
+// Burns small lower-third captions into the video using an SRT subtitle filter.
 export async function burnCaptions(videoBytes: Buffer, captions: Caption[]): Promise<Buffer> {
   const ws = createTempWorkspace();
   try {
@@ -130,12 +129,10 @@ export async function burnCaptions(videoBytes: Buffer, captions: Caption[]): Pro
     const outPath = join(ws.workDir, "captioned.mp4");
     ws.paths.push(outPath);
 
-    // Escaping: ffmpeg expects a path string; on Windows, backslashes are allowed but must not be interpreted as escapes.
-    // fluent-ffmpeg passes this through, so we replace backslashes with forward slashes for filter safety.
     const safeSrtPath = srtPath.replaceAll("\\", "/").replaceAll(":", "\\:");
     const style =
-      "FontName=Arial,FontSize=42,PrimaryColour=&H00FFFFFF,OutlineColour=&H00000000," +
-      "BackColour=&H80000000,Bold=1,Outline=2,Shadow=0,Alignment=2,MarginV=120";
+      "FontName=Arial,FontSize=20,PrimaryColour=&H00F0F0F0,OutlineColour=&H80000000," +
+      "BackColour=&H60000000,Bold=0,Outline=1,Shadow=0,Alignment=2,MarginV=36";
     const vf = `subtitles='${safeSrtPath}':force_style='${style}'`;
 
     await runFfmpeg(
@@ -152,14 +149,14 @@ export async function burnCaptions(videoBytes: Buffer, captions: Caption[]): Pro
   }
 }
 
-// Produces a final vertical mp4 by normalizing aspect, muxing voiceover, and burning captions.
+// Produces a final 1:1 square mp4 by normalizing aspect, muxing voiceover, and burning captions.
 export async function makeFinalVideo(params: {
   rawVideoMp4: Buffer;
   voiceMp3: Buffer;
   captions: Caption[];
 }): Promise<Buffer> {
-  const vertical = await ensureVertical1080(params.rawVideoMp4);
-  const withAudio = await muxVoiceover(vertical, params.voiceMp3);
+  const square = await ensureSquare1080(params.rawVideoMp4);
+  const withAudio = await muxVoiceover(square, params.voiceMp3);
   return burnCaptions(withAudio, params.captions);
 }
 

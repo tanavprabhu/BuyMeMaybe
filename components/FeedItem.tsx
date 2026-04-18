@@ -46,8 +46,8 @@ export function FeedItem(props: {
           ×
         </button>
 
-        <div className="relative mx-auto w-full max-w-sm">
-          <div className="relative aspect-[9/16] max-h-[52vh] w-full overflow-hidden border-2 border-bmm-brown bg-bmm-white shadow-[4px_4px_0_#5c4033]">
+        <div className="relative mx-auto w-full max-w-md">
+          <div className="relative aspect-square max-h-[min(92vw,52vh)] w-full overflow-hidden border-2 border-bmm-brown bg-bmm-white shadow-[4px_4px_0_#5c4033]">
             <video
               className="pointer-events-none absolute inset-0 h-full w-full object-cover"
               src={props.item.videoUrl}

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { analyzeItem } from "../../../lib/gemini";
 import { createJob, setJob } from "../../../lib/jobs";
+import { parseAskingPriceUsd, type SellerListingSpecs } from "../../../lib/seller-specs";
 import { writeUpload } from "../../../lib/storage";
 
 type AnalyzeResponse = {
@@ -16,6 +17,17 @@ function mimeToExt(mime: string): "jpg" | "png" | "webp" {
   return "jpg";
 }
 
+// Reads optional listing spec fields from multipart form data.
+function readSellerSpecs(form: FormData): SellerListingSpecs {
+  const g = (k: string) => String(form.get(k) ?? "").trim();
+  return {
+    titleLine: g("listingTitle"),
+    detailLine: g("listingDetail"),
+    extra: g("listingExtra"),
+    askingPriceInput: g("listingPrice"),
+  };
+}
+
 // Accepts an uploaded image, runs the AI analysis pipeline, and stores the result in an in-memory job.
 export async function POST(req: Request) {
   try {
@@ -29,8 +41,14 @@ export async function POST(req: Request) {
     const bytes = Buffer.from(await file.arrayBuffer());
     const jobId = createJob();
 
+    const seller = readSellerSpecs(form);
     const imageUrl = writeUpload({ id: jobId, bytes, ext: mimeToExt(mime) });
-    const analysis = await analyzeItem(bytes, mime);
+    const analysis = await analyzeItem(bytes, mime, { seller });
+
+    const priceOverride = parseAskingPriceUsd(seller.askingPriceInput);
+    if (priceOverride != null) {
+      analysis.askingPrice = priceOverride;
+    }
 
     setJob(jobId, { status: "ready-to-generate", analysis, imageUrl, mimeType: mime, imageBytes: bytes });
 
@@ -42,4 +60,3 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: message }, { status });
   }
 }
-

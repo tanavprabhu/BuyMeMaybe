@@ -28,8 +28,8 @@ async function submitJob(params: VideoParams): Promise<string> {
       model: "grok-imagine-video",
       prompt: params.videoPrompt,
       image: { url: dataUrl },
-      duration: params.durationSec ?? 12,
-      aspect_ratio: "9:16",
+      duration: params.durationSec ?? 8,
+      aspect_ratio: "1:1",
       resolution: "720p",
     }),
   });

@@ -6,6 +6,8 @@ import {
   directorPrompt,
   captionsPrompt,
 } from "./prompts";
+import type { SellerListingSpecs } from "./seller-specs";
+import { sellerSpecsPromptBlock } from "./seller-specs";
 
 export type Caption = { text: string; startMs: number; endMs: number };
 
@@ -28,6 +30,10 @@ export type ItemAnalysis = VisionAttrs & {
   captions: Caption[];
   sellerName: string;
   sellerLocation: string;
+};
+
+export type RunPipelineOptions = {
+  seller?: SellerListingSpecs;
 };
 
 // Resolves the vision model id (must accept image + text; see xAI console for availability).
@@ -86,17 +92,22 @@ async function callText(prompt: string, temperature = 1.0): Promise<Record<strin
 }
 
 // Orchestrates the four sequential xAI calls that produce a full marketplace listing from one photo.
-export async function runPipeline(imageBytes: Buffer, mime: string): Promise<ItemAnalysis> {
+export async function runPipeline(
+  imageBytes: Buffer,
+  mime: string,
+  opts?: RunPipelineOptions,
+): Promise<ItemAnalysis> {
+  const sellerBlock = opts?.seller ? sellerSpecsPromptBlock(opts.seller) : null;
   const t0 = Date.now();
   console.log("\n→ xAI listing pipeline");
 
   const s1Start = Date.now();
-  const v = await callVision(visionPrompt(), imageBytes, mime);
+  const v = await callVision(visionPrompt(sellerBlock), imageBytes, mime);
   const vision = v.__parsed as VisionAttrs;
   logStep("[1/4] vision", Date.now() - s1Start, v.__usage as any);
 
   const s2Start = Date.now();
-  const w = await callText(writerPrompt(vision as unknown as Record<string, unknown>));
+  const w = await callText(writerPrompt(vision as unknown as Record<string, unknown>, sellerBlock));
   const scriptData = w.__parsed as { script: string };
   logStep("[2/4] writer", Date.now() - s2Start, w.__usage as any);
 

@@ -28,7 +28,7 @@ async function runGeneration(jobId: string): Promise<void> {
     imageBytes,
     mimeType,
     videoPrompt: analysis.videoPrompt,
-    durationSec: 12,
+    durationSec: 8,
   });
 
   const finalVideo = await makeFinalVideo({

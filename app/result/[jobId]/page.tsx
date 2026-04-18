@@ -70,7 +70,7 @@ export default function ResultPage(props: { params: Promise<{ jobId: string }> }
           </div>
         ) : ready ? (
           <div className="mt-6 flex flex-1 flex-col">
-            <div className="relative aspect-[9/16] w-full overflow-hidden rounded-2xl border-2 border-bmm-brown bg-bmm-white shadow-[4px_4px_0_#5c4033]">
+            <div className="relative aspect-square w-full max-w-md mx-auto overflow-hidden rounded-2xl border-2 border-bmm-brown bg-bmm-white shadow-[4px_4px_0_#5c4033]">
               <video
                 className="h-full w-full object-cover"
                 src={`/generated/${ready}.mp4`}
