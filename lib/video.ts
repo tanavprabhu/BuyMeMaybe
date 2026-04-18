@@ -1,3 +1,5 @@
+import { loadRootEnv } from "./root-env";
+
 export type VideoParams = {
   imageBytes: Buffer;
   mimeType: string;
@@ -7,8 +9,13 @@ export type VideoParams = {
 
 // Kicks off a Grok Imagine video job and returns the xAI request_id for polling.
 async function submitJob(params: VideoParams): Promise<string> {
+  loadRootEnv();
   const key = process.env.XAI_API_KEY;
-  if (!key) throw new Error("XAI_API_KEY is not set in .env.local");
+  if (!key) {
+    throw new Error(
+      "XAI_API_KEY is missing. Add it to .env or .env.local in the project root, then restart `npm run dev`.",
+    );
+  }
   const dataUrl = `data:${params.mimeType};base64,${params.imageBytes.toString("base64")}`;
 
   const res = await fetch("https://api.x.ai/v1/videos/generations", {
@@ -39,7 +46,13 @@ type StatusResponse = {
 
 // Polls Grok Imagine for a specific job until done or failed, sleeping pollMs between checks.
 async function pollUntilDone(requestId: string, pollMs = 5000): Promise<string> {
-  const key = process.env.XAI_API_KEY!;
+  loadRootEnv();
+  const key = process.env.XAI_API_KEY;
+  if (!key) {
+    throw new Error(
+      "XAI_API_KEY is missing. Add it to .env or .env.local in the project root, then restart `npm run dev`.",
+    );
+  }
   const deadline = Date.now() + 15 * 60_000;
   let last = "";
   while (Date.now() < deadline) {

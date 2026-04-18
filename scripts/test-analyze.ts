@@ -3,8 +3,8 @@ import { extname, join } from "node:path";
 import { config } from "dotenv";
 import { analyzeItem } from "../lib/gemini";
 
-// Loads .env.local so DEDALUS_API_KEY and XAI_API_KEY are available at runtime.
-config({ path: ".env.local" });
+config({ path: ".env" });
+config({ path: ".env.local", override: true });
 
 // Resolves the image path from CLI args or falls back to the first image in seed-photos/.
 function resolveImagePath(): string {

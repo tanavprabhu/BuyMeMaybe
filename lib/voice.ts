@@ -1,7 +1,14 @@
+import { loadRootEnv } from "./root-env";
+
 // Returns a spoken-word mp3 buffer for the given script text using ElevenLabs TTS.
 export async function generateVoice(script: string): Promise<Buffer> {
+  loadRootEnv();
   const key = process.env.ELEVENLABS_API_KEY;
-  if (!key) throw new Error("ELEVENLABS_API_KEY is not set in .env.local");
+  if (!key) {
+    throw new Error(
+      "ELEVENLABS_API_KEY is missing. Add it to .env or .env.local in the project root, then restart `npm run dev`.",
+    );
+  }
 
   // "Rachel" — warm, expressive, works well for dramatic item monologues.
   const voiceId = "21m00Tcm4TlvDq8ikWAM";
