@@ -27,7 +27,7 @@ async function submitJob(params: VideoParams): Promise<string> {
     body: JSON.stringify({
       model: "grok-imagine-video",
       prompt: params.videoPrompt,
-      image: dataUrl,
+      image: { url: dataUrl },
       duration: params.durationSec ?? 12,
       aspect_ratio: "9:16",
       resolution: "720p",
