@@ -28,13 +28,12 @@ async function runGeneration(jobId: string): Promise<void> {
     imageBytes,
     mimeType,
     videoPrompt: analysis.videoPrompt,
-    durationSec: 8,
+    durationSec: 15,
   });
 
   const finalVideo = await makeFinalVideo({
     rawVideoMp4: rawVideo,
     voiceMp3: voice,
-    captions: analysis.captions,
   });
 
   const videoUrl = writeGeneratedVideo({ id: jobId, bytes: finalVideo });

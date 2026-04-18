@@ -33,9 +33,9 @@ async function generateOne(imagePath: string): Promise<void> {
     imageBytes,
     mimeType: mime,
     videoPrompt: analysis.videoPrompt,
-    durationSec: 8,
+    durationSec: 15,
   });
-  const finalVideo = await makeFinalVideo({ rawVideoMp4: rawVideo, voiceMp3: voice, captions: analysis.captions });
+  const finalVideo = await makeFinalVideo({ rawVideoMp4: rawVideo, voiceMp3: voice });
   const videoUrl = writeGeneratedVideo({ id, bytes: finalVideo });
 
   await prisma.item.create({

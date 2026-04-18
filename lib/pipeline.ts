@@ -4,7 +4,6 @@ import {
   visionPrompt,
   writerPrompt,
   directorPrompt,
-  captionsPrompt,
 } from "./prompts";
 import type { SellerListingSpecs } from "./seller-specs";
 import { sellerSpecsPromptBlock } from "./seller-specs";
@@ -116,11 +115,6 @@ export async function runPipeline(
   const videoData = d.__parsed as { videoPrompt: string };
   logStep("[3/4] director", Date.now() - s3Start, d.__usage as any);
 
-  const s4Start = Date.now();
-  const c = await callText(captionsPrompt(scriptData), 0.3);
-  const captionsData = c.__parsed as { captions: Caption[] };
-  logStep("[4/4] captions", Date.now() - s4Start, c.__usage as any);
-
   const seller = randomSeller();
   console.log(`  pipeline total              ${`${Date.now() - t0}ms`.padStart(7)}\n`);
 
@@ -128,7 +122,7 @@ export async function runPipeline(
     ...vision,
     script: scriptData.script,
     videoPrompt: videoData.videoPrompt,
-    captions: captionsData.captions,
+    captions: [],
     sellerName: seller.name,
     sellerLocation: seller.location,
   };

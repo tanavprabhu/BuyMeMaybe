@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { messageFromFailedResponse } from "../lib/client-api-error";
+import { readMyItemIds, removeMyItemId } from "../lib/client-owned-items";
 import { BrandMark } from "./BrandMark";
 import { CategoryPills, type CategoryId } from "./CategoryPills";
 import { FeedItem, type FeedItemModel } from "./FeedItem";
@@ -13,6 +15,8 @@ export function FeedScroller(props: { highlightId?: string | null }) {
   const [items, setItems] = useState<FeedItemModel[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [mineIds, setMineIds] = useState<Set<string>>(new Set());
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const rootRef = useRef<HTMLDivElement | null>(null);
 
   const highlight = props.highlightId ?? null;
@@ -38,6 +42,11 @@ export function FeedScroller(props: { highlightId?: string | null }) {
     setItems((prev) => [...prev, ...(json.items ?? [])]);
     setCursor(json.nextCursor ?? null);
   }
+
+  useEffect(() => {
+    // Loads locally-owned listing ids for delete controls.
+    setMineIds(readMyItemIds());
+  }, []);
 
   useEffect(() => {
     // Loads the initial feed.
@@ -98,9 +107,40 @@ export function FeedScroller(props: { highlightId?: string | null }) {
     next?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
+  async function deleteMine(id: string) {
+    // Deletes a locally-owned listing from DB and removes it from feed state.
+    if (deletingId) return;
+    if (!window.confirm("Remove this listing permanently?")) return;
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/item/${encodeURIComponent(id)}`, { method: "DELETE" });
+      if (!res.ok) {
+        const msg = await messageFromFailedResponse(res);
+        window.alert(`Could not remove listing: ${msg}`);
+        return;
+      }
+      setItems((prev) => prev.filter((x) => x.id !== id));
+      removeMyItemId(id);
+      setMineIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+      if (activeId === id) {
+        const rest = items.filter((x) => x.id !== id);
+        setActiveId(rest[0]?.id ?? null);
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      window.alert(`Could not remove listing: ${msg}`);
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
   return (
-    <div className="relative h-dvh w-full bg-bmm-sky text-bmm-brown">
-      <div className="pointer-events-auto absolute left-0 right-0 top-0 z-20 border-b-2 border-bmm-brown bg-bmm-cream/95 backdrop-blur-sm">
+    <div className="relative flex h-full min-h-0 w-full flex-1 flex-col bg-bmm-sky text-bmm-brown">
+      <div className="pointer-events-auto z-20 shrink-0 border-b-2 border-bmm-brown bg-bmm-cream/95 backdrop-blur-sm">
         <div className="flex items-center justify-between gap-2 px-3 py-2">
           <BrandMark />
           <a
@@ -116,10 +156,10 @@ export function FeedScroller(props: { highlightId?: string | null }) {
 
       <div
         ref={rootRef}
-        className="h-dvh w-full snap-y snap-mandatory overflow-y-scroll no-scrollbar"
+        className="flex min-h-0 flex-1 flex-col overflow-y-scroll snap-y snap-mandatory no-scrollbar"
       >
         {items.length === 0 ? (
-          <div className="grid h-dvh place-items-center px-6 text-center">
+          <div className="flex min-h-0 flex-[0_0_100%] flex-col items-center justify-center px-6 text-center">
             <div>
               <div className="text-2xl font-bold text-bmm-brown">No items yet</div>
               <div className="mt-2 text-bmm-brown/85">
@@ -135,11 +175,18 @@ export function FeedScroller(props: { highlightId?: string | null }) {
           </div>
         ) : (
           items.map((it) => (
-            <div key={it.id} data-item-id={it.id} className="h-dvh">
+            <div
+              key={it.id}
+              data-item-id={it.id}
+              className="flex min-h-0 flex-[0_0_100%] snap-start flex-col"
+            >
               <FeedItem
                 item={it}
                 active={activeId === it.id}
                 onAdvance={() => advanceFrom(it.id)}
+                mine={mineIds.has(it.id)}
+                deleting={deletingId === it.id}
+                onDeleteMine={deleteMine}
               />
             </div>
           ))
@@ -148,4 +195,3 @@ export function FeedScroller(props: { highlightId?: string | null }) {
     </div>
   );
 }
-

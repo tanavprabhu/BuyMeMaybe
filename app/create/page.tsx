@@ -54,8 +54,8 @@ export default function CreatePage() {
   }
 
   return (
-    <div className="min-h-dvh bg-bmm-sky text-bmm-brown">
-      <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-5 py-6">
+    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-bmm-sky text-bmm-brown">
+      <div className="mx-auto flex w-full max-w-md flex-col px-5 py-6">
         <div className="flex items-center justify-between border-b-2 border-bmm-brown pb-3">
           <a
             href="/"

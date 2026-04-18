@@ -13,7 +13,7 @@ const VOICE_RULES_WITH_SPECS = `
 - Enthusiastic, cute, lively — clear TTS-friendly punctuation.
 - Weave in the seller's facts naturally (brand, size, condition, price, care) — do not invent conflicting details.
 - Sound like a playful character introduction, not a corporate product listing.
-- ~8 seconds spoken (~28–40 words at a brisk pace).
+- ~15 seconds spoken (~45–70 words at a brisk pace).
 `;
 
 // Prompt for step 1: analyze the photo and extract structured item attributes.
@@ -64,8 +64,8 @@ ${sellerBlock}
     : "";
 
   const lengthRule = sellerBlock
-    ? "### Length\n28–40 words. Must fit ~8 seconds of voiceover.\n"
-    : "### Length\n28–40 words. Must fit ~8 seconds of voiceover.\n";
+    ? "### Length\n45–70 words. Must fit ~15 seconds of voiceover.\n"
+    : "### Length\n45–70 words. Must fit ~15 seconds of voiceover.\n";
 
   return `You are the WRITER stage of BuyMeMaybe. You write the first-person monologue spoken by the item itself in a short square video.
 
@@ -98,7 +98,7 @@ Item attributes: ${JSON.stringify(attrs, null, 2)}
 Spoken script (voiceover only — do NOT render this as big on-screen text): "${scriptData.script}"
 
 ### Output video (STRICT)
-- **8 seconds**, **1:1 square** aspect ratio (not vertical 9:16). Frame should feel balanced, not stretched tall.
+- **15 seconds**, **1:1 square** aspect ratio (not vertical 9:16). Frame should feel balanced, not stretched tall.
 - **Photorealistic**: keep the item's color, logos, print, texture, and lighting **exact** vs the photo. Do not change the background or printed graphics on the item.
 - **Motion**: The item comes alive like a playful animated character — fabric lifts, wrinkles shift, energetic bounce/wiggle/dance; it **moves around the frame** (not stuck center). Sleeves/body move expressively **as fabric** — **no added limbs or human arms**.
 - **Face**: Semi-transparent **cartoon** eyes + mouth blended into the item surface (chest/front area appropriate to shape) — cute, expressive, blinking, **mouth motion synced to speech**. Feels part of the shirt/object, not a pasted sticker.

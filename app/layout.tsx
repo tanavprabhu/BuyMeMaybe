@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Patrick_Hand, Quicksand } from "next/font/google";
+import { PhoneShell } from "../components/PhoneShell";
 import "./globals.css";
 
 const quicksand = Quicksand({
@@ -28,7 +29,9 @@ export default function RootLayout({
       lang="en"
       className={`${quicksand.variable} ${display.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col font-sans">{children}</body>
+      <body className="min-h-full font-sans">
+        <PhoneShell>{children}</PhoneShell>
+      </body>
     </html>
   );
 }

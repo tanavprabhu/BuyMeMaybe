@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { BrandMark } from "../../../components/BrandMark";
+import { addMyItemId } from "../../../lib/client-owned-items";
 
 type JobStatus =
   | { status: "pending-analyze" }
@@ -43,9 +44,15 @@ export default function ResultPage(props: { params: Promise<{ jobId: string }> }
 
   const ready = state.status === "ready" ? state.itemId : null;
 
+  useEffect(() => {
+    // Marks generated items as owned by this browser so they can be removed later.
+    if (!ready) return;
+    addMyItemId(ready);
+  }, [ready]);
+
   return (
-    <div className="min-h-dvh bg-bmm-sky text-bmm-brown">
-      <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-5 py-6">
+    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-bmm-sky text-bmm-brown">
+      <div className="mx-auto flex w-full max-w-md flex-col px-5 py-6">
         <div className="flex items-center justify-between border-b-2 border-bmm-brown pb-3">
           <a
             href="/"

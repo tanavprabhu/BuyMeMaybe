@@ -120,43 +120,12 @@ export async function muxVoiceover(videoBytes: Buffer, mp3Bytes: Buffer): Promis
   }
 }
 
-// Burns small lower-third captions into the video using an SRT subtitle filter.
-export async function burnCaptions(videoBytes: Buffer, captions: Caption[]): Promise<Buffer> {
-  const ws = createTempWorkspace();
-  try {
-    const inPath = writeTempFile(ws, "in.mp4", videoBytes);
-    const srtPath = writeCaptionsSrt(ws, captions);
-    const outPath = join(ws.workDir, "captioned.mp4");
-    ws.paths.push(outPath);
-
-    const safeSrtPath = srtPath.replaceAll("\\", "/").replaceAll(":", "\\:");
-    const style =
-      "FontName=Arial,FontSize=20,PrimaryColour=&H00F0F0F0,OutlineColour=&H80000000," +
-      "BackColour=&H60000000,Bold=0,Outline=1,Shadow=0,Alignment=2,MarginV=36";
-    const vf = `subtitles='${safeSrtPath}':force_style='${style}'`;
-
-    await runFfmpeg(
-      ffmpeg(inPath)
-        .outputOptions(["-movflags +faststart", "-pix_fmt yuv420p", "-r 30"])
-        .videoFilters(vf)
-        .audioCodec("copy")
-        .output(outPath),
-    );
-
-    return readFileSync(outPath);
-  } finally {
-    rmSync(ws.workDir, { recursive: true, force: true });
-  }
-}
-
-// Produces a final 1:1 square mp4 by normalizing aspect, muxing voiceover, and burning captions.
+// Produces a final 1:1 square mp4 by normalizing aspect and muxing voiceover (no burned-in captions).
 export async function makeFinalVideo(params: {
   rawVideoMp4: Buffer;
   voiceMp3: Buffer;
-  captions: Caption[];
 }): Promise<Buffer> {
   const square = await ensureSquare1080(params.rawVideoMp4);
-  const withAudio = await muxVoiceover(square, params.voiceMp3);
-  return burnCaptions(withAudio, params.captions);
+  return muxVoiceover(square, params.voiceMp3);
 }
 
