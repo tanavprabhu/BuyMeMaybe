@@ -8,9 +8,9 @@ A TikTok-style mobile-web marketplace where every listing is a 15–20s vertical
 
 - **Frontend + backend:** Next.js (App Router) + React + TypeScript + Tailwind — one repo, one codebase. API routes live under `app/api/`.
 - **Database:** SQLite via Prisma — local file at `prisma/dev.db`, accessed through `lib/db.ts`.
-- **Text + Vision AI:** xAI Grok (`grok-2-vision-latest`) — one call returns item name, funny script, video prompt, category, asking price, urgency days, and caption timings. Uses OpenAI-compatible SDK with `baseURL: "https://api.x.ai/v1"`. Wrapper in `lib/gemini.ts` (keep filename, rename later).
+- **LLM + vision:** Native xAI OpenAI-compatible API (`https://api.x.ai/v1`, `XAI_API_KEY`) — 4-step pipeline in `lib/pipeline.ts` (defaults: `grok-4-1-fast-non-reasoning` for vision + text; override with `XAI_VISION_MODEL` / `XAI_TEXT_MODEL`). Client in `lib/xai-openai.ts`; `lib/gemini.ts` re-exports `analyzeItem()`.
 - **Voice AI:** ElevenLabs. Wrapper in `lib/voice.ts`.
-- **Video AI (talking item):** TBD — Veo 3, Hedra, or Runway. Behind `VIDEO_PROVIDER` env flag in `lib/video.ts`.
+- **Video AI (talking item):** xAI Grok Imagine (`grok-imagine-video`) — submit + poll in `lib/video.ts` (`XAI_API_KEY`).
 - **Video compositing:** FFmpeg via `fluent-ffmpeg` — burns captions, enforces 9:16, muxes audio. Wrapper in `lib/ffmpeg.ts`.
 
 ## Working agreements

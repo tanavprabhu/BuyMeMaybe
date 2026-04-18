@@ -1,4 +1,4 @@
-import { getDedalus } from "./dedalus";
+import { getXaiOpenAI } from "./xai-openai";
 import { randomSeller } from "./fakeSeller";
 import {
   visionPrompt,
@@ -30,8 +30,15 @@ export type ItemAnalysis = VisionAttrs & {
   sellerLocation: string;
 };
 
-const VISION_MODEL = "xai/grok-2-vision-latest";
-const TEXT_MODEL = "xai/grok-4";
+// Resolves the vision model id (must accept image + text; see xAI console for availability).
+function visionModel(): string {
+  return process.env.XAI_VISION_MODEL ?? "grok-4-1-fast-non-reasoning";
+}
+
+// Resolves the text model id for writer/director/captions steps (JSON / structured output).
+function textModel(): string {
+  return process.env.XAI_TEXT_MODEL ?? "grok-4-1-fast-non-reasoning";
+}
 
 // Pretty-logs a pipeline step's name, elapsed milliseconds, and tokens used.
 function logStep(
@@ -45,11 +52,11 @@ function logStep(
   console.log(`  ${label.padEnd(28)} ${`${ms}ms`.padStart(7)}${toks}`);
 }
 
-// Sends a vision prompt + image through Dedalus and parses the returned JSON object.
+// Sends a vision prompt + image through xAI and parses the returned JSON object.
 async function callVision(prompt: string, imageBytes: Buffer, mime: string): Promise<Record<string, unknown>> {
   const dataUrl = `data:${mime};base64,${imageBytes.toString("base64")}`;
-  const res = await getDedalus().chat.completions.create({
-    model: VISION_MODEL,
+  const res = await getXaiOpenAI().chat.completions.create({
+    model: visionModel(),
     temperature: 0.6,
     response_format: { type: "json_object" },
     messages: [
@@ -66,10 +73,10 @@ async function callVision(prompt: string, imageBytes: Buffer, mime: string): Pro
   return { __parsed: JSON.parse(raw), __usage: res.usage };
 }
 
-// Sends a text-only prompt through Dedalus and parses the returned JSON object.
+// Sends a text-only prompt through xAI and parses the returned JSON object.
 async function callText(prompt: string, temperature = 1.0): Promise<Record<string, unknown>> {
-  const res = await getDedalus().chat.completions.create({
-    model: TEXT_MODEL,
+  const res = await getXaiOpenAI().chat.completions.create({
+    model: textModel(),
     temperature,
     response_format: { type: "json_object" },
     messages: [{ role: "user", content: prompt }],
@@ -78,10 +85,10 @@ async function callText(prompt: string, temperature = 1.0): Promise<Record<strin
   return { __parsed: JSON.parse(raw), __usage: res.usage };
 }
 
-// Orchestrates the 4 sequential Dedalus calls that produce a full marketplace listing from one photo.
+// Orchestrates the four sequential xAI calls that produce a full marketplace listing from one photo.
 export async function runPipeline(imageBytes: Buffer, mime: string): Promise<ItemAnalysis> {
   const t0 = Date.now();
-  console.log("\n→ Dedalus orchestration pipeline");
+  console.log("\n→ xAI listing pipeline");
 
   const s1Start = Date.now();
   const v = await callVision(visionPrompt(), imageBytes, mime);
