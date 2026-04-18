@@ -13,7 +13,7 @@ const VOICE_RULES_WITH_SPECS = `
 - Enthusiastic, cute, lively — clear TTS-friendly punctuation.
 - Weave in the seller's facts naturally (brand, size, condition, price, care) — do not invent conflicting details.
 - Sound like a playful character introduction, not a corporate product listing.
-- ~15 seconds spoken (~45–70 words at a brisk pace).
+- ~11 seconds spoken (~34–52 words at a brisk pace).
 `;
 
 // Prompt for step 1: analyze the photo and extract structured item attributes.
@@ -64,8 +64,8 @@ ${sellerBlock}
     : "";
 
   const lengthRule = sellerBlock
-    ? "### Length\n45–70 words. Must fit ~15 seconds of voiceover.\n"
-    : "### Length\n45–70 words. Must fit ~15 seconds of voiceover.\n";
+    ? "### Length\n34–52 words. Must fit ~11 seconds of voiceover.\n"
+    : "### Length\n34–52 words. Must fit ~11 seconds of voiceover.\n";
 
   return `You are the WRITER stage of BuyMeMaybe. You write the first-person monologue spoken by the item itself in a short square video.
 
@@ -98,7 +98,7 @@ Item attributes: ${JSON.stringify(attrs, null, 2)}
 Spoken script (voiceover only — do NOT render this as big on-screen text): "${scriptData.script}"
 
 ### Output video (STRICT)
-- **15 seconds**, **1:1 square** aspect ratio (not vertical 9:16). Frame should feel balanced, not stretched tall.
+- **11 seconds**, **1:1 square** aspect ratio (not vertical 9:16). Frame should feel balanced, not stretched tall.
 - **Photorealistic**: keep the item's color, logos, print, texture, and lighting **exact** vs the photo. Do not change the background or printed graphics on the item.
 - **Motion**: The item comes alive like a playful animated character — fabric lifts, wrinkles shift, energetic bounce/wiggle/dance; it **moves around the frame** (not stuck center). Sleeves/body move expressively **as fabric** — **no added limbs or human arms**.
 - **Face**: Semi-transparent **cartoon** eyes + mouth blended into the item surface (chest/front area appropriate to shape) — cute, expressive, blinking, **mouth motion synced to speech**. Feels part of the shirt/object, not a pasted sticker.
@@ -115,7 +115,7 @@ Return ONLY this JSON:
 }`;
 }
 
-// Prompt for step 4: small, subtle lower-third style caption chunks (~8s total).
+// Prompt for step 4: small, subtle lower-third style caption chunks (unused when burn-in captions are disabled).
 export function captionsPrompt(scriptData: { script: string }): string {
   const words = scriptData.script.trim().split(/\s+/).filter(Boolean).length;
   const totalMs = Math.min(12_000, Math.max(6000, Math.round(words * 220)));

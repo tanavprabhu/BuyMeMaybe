@@ -33,7 +33,7 @@ async function generateOne(imagePath: string): Promise<void> {
     imageBytes,
     mimeType: mime,
     videoPrompt: analysis.videoPrompt,
-    durationSec: 15,
+    durationSec: 11,
   });
   const finalVideo = await makeFinalVideo({ rawVideoMp4: rawVideo, voiceMp3: voice });
   const videoUrl = writeGeneratedVideo({ id, bytes: finalVideo });
