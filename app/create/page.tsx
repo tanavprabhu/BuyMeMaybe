@@ -3,11 +3,13 @@
 import { useMemo, useState } from "react";
 import { BrandMark } from "../../components/BrandMark";
 import { friendlyApiMessage, messageFromFailedResponse } from "../../lib/client-api-error";
+import { compressListingImages } from "../../lib/compress-listing-images";
 import {
   LISTING_CATEGORY_FORMS,
   SELLER_CATEGORY_KEYS,
   type SellerListingCategoryKey,
 } from "../../lib/listing-categories";
+import { MAX_LISTING_UPLOAD_BYTES } from "../../lib/listing-upload-limits";
 
 type AnalyzeResponse = { jobId: string; imageUrl: string; imageUrls: string[]; analysis: any };
 
@@ -63,8 +65,26 @@ export default function CreatePage() {
     const titleLine = joinListingLine(details.l1a ?? "", details.l1b ?? "");
     const detailLine = joinListingLine(details.l2a ?? "", details.l2b ?? "");
 
+    let uploadFiles: File[];
+    try {
+      uploadFiles = await compressListingImages(files);
+    } catch {
+      setStep("error");
+      setError("Could not prepare your photos. Try different images or a different browser.");
+      return;
+    }
+
+    const totalBytes = uploadFiles.reduce((s, f) => s + f.size, 0);
+    if (totalBytes > MAX_LISTING_UPLOAD_BYTES) {
+      setStep("error");
+      setError(
+        "Photos are still too large after compressing. Try fewer photos or lower-resolution shots (under ~4MB total).",
+      );
+      return;
+    }
+
     const fd = new FormData();
-    for (const f of files) {
+    for (const f of uploadFiles) {
       fd.append("images", f);
     }
     fd.append("sellerCategory", sellerCategory);

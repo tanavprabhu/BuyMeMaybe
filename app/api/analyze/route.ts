@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 import { analyzeItem } from "../../../lib/gemini";
 import { commitAnalyzeJob, newJobId, type JobListingImage } from "../../../lib/jobs";
+import { MAX_LISTING_UPLOAD_BYTES } from "../../../lib/listing-upload-limits";
 import { parseAskingPriceUsd, type SellerListingSpecs } from "../../../lib/seller-specs";
 import { writeUpload } from "../../../lib/storage";
+
+export const maxDuration = 120;
 
 const MAX_LISTING_IMAGES = 7;
 
@@ -48,6 +51,17 @@ export async function POST(req: Request) {
       return NextResponse.json(
         { error: `Add at least one photo (up to ${MAX_LISTING_IMAGES}). Use form field "images" or legacy "image".` },
         { status: 400 },
+      );
+    }
+
+    const totalBytes = files.reduce((sum, f) => sum + f.size, 0);
+    if (totalBytes > MAX_LISTING_UPLOAD_BYTES) {
+      return NextResponse.json(
+        {
+          error:
+            "Photos are too large for one upload (host limit ~4MB). Use fewer photos, pick “Medium” quality in your camera, or take screenshots at lower resolution.",
+        },
+        { status: 413 },
       );
     }
 

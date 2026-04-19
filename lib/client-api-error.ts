@@ -12,6 +12,12 @@ export async function messageFromFailedResponse(res: Response): Promise<string> 
 
 export function friendlyApiMessage(raw: string): string {
   const t = raw.trim();
+  if (/FUNCTION_PAYLOAD_TOO_LARGE|413|entity too large|payload too large/i.test(t)) {
+    return (
+      "Your photos are too large for one upload (the host caps request size around 4MB). " +
+      "Try fewer photos, use “Medium” camera quality, or take screenshots at lower resolution, then try again."
+    );
+  }
   if (/^402\b/i.test(t) || /out of credits|top up to continue|insufficient.*credit/i.test(t)) {
     return "Your xAI account needs credits or a valid API key. Check console.x.ai billing and XAI_API_KEY, then try again.";
   }

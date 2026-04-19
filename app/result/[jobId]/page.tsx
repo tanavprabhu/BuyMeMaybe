@@ -5,6 +5,7 @@ import { BrandMark } from "../../../components/BrandMark";
 import { addMyItemId } from "../../../lib/client-owned-items";
 
 type JobStatus =
+  | { status: "pending" }
   | { status: "ready-to-generate" }
   | { status: "generating" }
   | { status: "ready"; itemId: string; videoUrl?: string }
@@ -14,7 +15,7 @@ type StatusResponse = { jobId: string } & JobStatus;
 
 export default function ResultPage(props: { params: Promise<{ jobId: string }> }) {
   const [jobId, setJobId] = useState<string | null>(null);
-  const [state, setState] = useState<JobStatus>({ status: "generating" });
+  const [state, setState] = useState<JobStatus>({ status: "pending" });
 
   useEffect(() => {
     void props.params.then((p) => setJobId(p.jobId));
@@ -37,6 +38,23 @@ export default function ResultPage(props: { params: Promise<{ jobId: string }> }
       cancelled = true;
     };
   }, [jobId]);
+
+  useEffect(() => {
+    if (!jobId || state.status !== "ready-to-generate") return;
+    const key = `bmm-gen-kick-${jobId}`;
+    try {
+      if (sessionStorage.getItem(key)) return;
+      sessionStorage.setItem(key, "1");
+    } catch {
+      /* private mode */
+    }
+    void fetch("/api/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ jobId }),
+      cache: "no-store",
+    });
+  }, [jobId, state.status]);
 
   const ready = state.status === "ready" ? state.itemId : null;
 
@@ -98,6 +116,28 @@ export default function ResultPage(props: { params: Promise<{ jobId: string }> }
               </a>
             </div>
           </div>
+        ) : state.status === "ready-to-generate" ? (
+          <div className="mt-10 flex flex-1 flex-col items-center justify-center text-center">
+            <div className="font-display text-2xl font-bold">starting your video…</div>
+            <div className="mt-2 max-w-xs text-sm text-bmm-brown/85">
+              the server is picking up your job. this page should move to “cooking” in a few seconds.
+            </div>
+            <button
+              type="button"
+              className="mt-6 rounded-full border-2 border-bmm-brown bg-bmm-peach px-5 py-2.5 text-sm font-bold text-bmm-brown hover:brightness-95"
+              onClick={() => {
+                if (!jobId) return;
+                void fetch("/api/generate", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ jobId }),
+                  cache: "no-store",
+                });
+              }}
+            >
+              nothing moved? tap to retry
+            </button>
+          </div>
         ) : (
           <div className="mt-10 flex flex-1 flex-col items-center justify-center text-center">
             <div className="font-display text-2xl font-bold">cooking your video…</div>
@@ -105,7 +145,7 @@ export default function ResultPage(props: { params: Promise<{ jobId: string }> }
               this can take 1–3 minutes. don’t close the tab.
             </div>
             <div className="mt-6 text-xs text-bmm-brown/60">
-              status: {state.status}
+              status: {state.status === "pending" ? "checking…" : state.status}
             </div>
           </div>
         )}
