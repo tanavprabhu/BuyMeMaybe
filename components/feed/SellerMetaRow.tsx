@@ -1,6 +1,5 @@
 import { LikeButton } from "../LikeButton";
 
-/** First letter (or digit) for a circular initial avatar; strips a leading @. */
 function sellerAvatarInitial(sellerName: string): string {
   const raw = sellerName.trim();
   if (!raw) return "?";
@@ -12,7 +11,6 @@ function sellerAvatarInitial(sellerName: string): string {
   return "?";
 }
 
-// Seller avatar, handle, posted date, and likes in one aligned row.
 export function SellerMetaRow(props: {
   sellerName: string;
   postedLabel: string;

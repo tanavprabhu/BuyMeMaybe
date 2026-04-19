@@ -1,4 +1,3 @@
-// Shared voice rules for writer when seller did NOT give detailed specs (still fun, not corny).
 const VOICE_RULES_DEFAULT = `
 ### Voice rules (STRICT)
 - Theatrical but cute: the item is talking in first person, enthusiastic and lively, like a short social clip.
@@ -7,7 +6,6 @@ const VOICE_RULES_DEFAULT = `
 - Banned: motivational-poster endings, "I may be used but I still have love to give" energy.
 `;
 
-// Tighter voice when seller provided facts — match upbeat resale clip energy.
 const VOICE_RULES_WITH_SPECS = `
 ### Voice rules (with seller specs)
 - Enthusiastic, cute, lively — clear voiceover-friendly punctuation.
@@ -15,7 +13,6 @@ const VOICE_RULES_WITH_SPECS = `
 - Sound like a playful character introduction, not a corporate product listing.
 `;
 
-// How the monologue should sound when spoken (writer + video VO) — under 10s ceiling.
 const SPEECH_DELIVERY_RULES = `
 ### Speech delivery (STRICT — must fit a **10 second** clip)
 - **Clarity first**: simple everyday words where you can; avoid tongue-twisters, stacked clauses, and cramming facts into one breathless sentence.
@@ -23,7 +20,6 @@ const SPEECH_DELIVERY_RULES = `
 - **Time budget**: aim for **~8–9 seconds** of speech at that moderate pace so small pauses still land **inside** the 10 second hard limit.
 `;
 
-// Prompt for step 1: analyze the photo(s) and extract structured item attributes.
 export function visionPrompt(sellerBlock: string | null, imageCount = 1): string {
   const sellerSection = sellerBlock
     ? `
@@ -66,7 +62,6 @@ ${sellerSection}
 Return the JSON now.`;
 }
 
-// Prompt for step 2: write the monologue from the item attributes (and optional seller specs).
 export function writerPrompt(
   attrs: Record<string, unknown>,
   sellerBlock: string | null,
@@ -105,7 +100,6 @@ Return ONLY this JSON:
 }`;
 }
 
-// Prompt for step 3: Grok Imagine image-to-video or reference-to-video — square, playful character motion, no giant on-video text.
 export function directorPrompt(
   attrs: Record<string, unknown>,
   scriptData: { script: string },
@@ -141,30 +135,5 @@ Return ONLY this JSON:
 
 {
   "videoPrompt": "single paragraph, 90–160 words, English"
-}`;
-}
-
-// Prompt for step 4: small, subtle lower-third style caption chunks (unused when burn-in captions are disabled).
-export function captionsPrompt(scriptData: { script: string }): string {
-  const words = scriptData.script.trim().split(/\s+/).filter(Boolean).length;
-  // ~300ms/word ≈ moderate clear speech; cap at 10s to match the video VO window.
-  const msPerWord = 300;
-  const totalMs = Math.min(10_000, Math.max(7500, Math.round(words * msPerWord)));
-
-  return `You are the CAPTIONS stage for BuyMeMaybe. Split the script into **small** on-screen chunks for **optional** burn-in — like subtle subtitles, **not** giant TikTok text.
-
-Script: "${scriptData.script}"
-
-### Rules
-- **5 to 9 chunks**, each **2–4 words only** (short phrases).
-- Split at natural spoken breaks. Never mid-word.
-- Total coverage: 0ms to approximately ${totalMs}ms (~10s video, clear moderate speech). Use ~${msPerWord}ms per word average.
-- \`endMs\` of chunk N must equal \`startMs\` of chunk N+1.
-- Last chunk's \`endMs\` ≈ ${totalMs}.
-
-Return ONLY this JSON:
-
-{
-  "captions": [ { "text": "chunk text", "startMs": 0, "endMs": 800 } ]
 }`;
 }

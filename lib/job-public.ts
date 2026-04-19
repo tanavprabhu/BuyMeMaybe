@@ -1,6 +1,5 @@
 import type { JobState } from "./jobs";
 
-// Shapes the in-memory job for JSON responses (never exposes raw image bytes).
 export function jobToPublicJson(jobId: string, job: JobState): Record<string, unknown> {
   const base = { jobId };
   switch (job.status) {

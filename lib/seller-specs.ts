@@ -1,14 +1,11 @@
-// Seller-entered hints shown on the create page to steer vision, script, and video.
 export type SellerListingSpecs = {
   titleLine: string;
   detailLine: string;
   extra: string;
   askingPriceInput: string;
-  /** Create form department (clothing, kitchen, …) — drives field labels in the feed. */
   sellerCategoryKey?: string;
 };
 
-// Returns true when any spec field has non-whitespace content.
 export function hasSellerSpecs(s: SellerListingSpecs): boolean {
   return (
     s.titleLine.trim().length > 0 ||
@@ -18,7 +15,6 @@ export function hasSellerSpecs(s: SellerListingSpecs): boolean {
   );
 }
 
-// Builds a compact block for LLM prompts, or null if empty.
 export function sellerSpecsPromptBlock(s: SellerListingSpecs): string | null {
   if (!hasSellerSpecs(s)) return null;
   const lines: string[] = [];
@@ -32,7 +28,6 @@ export function sellerSpecsPromptBlock(s: SellerListingSpecs): string | null {
   return lines.join("\n");
 }
 
-// Parses a dollar amount from messy user input, or returns null.
 export function parseAskingPriceUsd(raw: string): number | null {
   const t = raw.replace(/[$,\s]/g, "").trim();
   if (!t) return null;

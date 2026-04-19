@@ -3,15 +3,12 @@ import { join } from "node:path";
 
 const ROOT = process.cwd();
 
-// Ensures the public asset folders exist for uploads and generated videos.
 export function ensurePublicDirs(): void {
   mkdirSync(join(ROOT, "public", "uploads"), { recursive: true });
   mkdirSync(join(ROOT, "public", "generated"), { recursive: true });
   mkdirSync(join(ROOT, "tmp"), { recursive: true });
 }
 
-// Writes an uploaded image to public/uploads and returns the public URL path.
-// Use index 0 (default) for the primary `{id}.ext`; index 1+ writes `{id}-{index}.ext` for extra angles.
 export function writeUpload(params: {
   id: string;
   bytes: Buffer;
@@ -26,7 +23,6 @@ export function writeUpload(params: {
   return rel;
 }
 
-// Writes a generated mp4 to public/generated and returns the public URL path.
 export function writeGeneratedVideo(params: { id: string; bytes: Buffer }): string {
   ensurePublicDirs();
   const rel = `/generated/${params.id}.mp4`;

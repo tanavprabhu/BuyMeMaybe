@@ -3,15 +3,12 @@ import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
 
-/** Product site for [Dedalus Labs](https://www.dedaluslabs.ai/) persistent agent sandboxes. */
 export const DEDALUS_LABS_URL = "https://www.dedaluslabs.ai/";
 
-/** True when a Dedalus Machine id is configured (CLI hooks may run). */
 export function isDedalusMachineHookEnabled(): boolean {
   return Boolean(process.env.DEDALUS_MACHINE_ID?.trim());
 }
 
-// Best-effort `dedalus machines exec` — never throws; failures are logged only.
 async function pingDedalusMachine(context: string): Promise<void> {
   const id = process.env.DEDALUS_MACHINE_ID?.trim();
   if (!id) return;
@@ -29,10 +26,6 @@ async function pingDedalusMachine(context: string): Promise<void> {
   }
 }
 
-/**
- * When `DEDALUS_MACHINE_ID` is set, pings the Dedalus Machine before/after `job`.
- * When unset, runs `job` only — same behavior as before this hook existed.
- */
 export async function withDedalusMachineHooks<T>(label: string, job: () => Promise<T>): Promise<T> {
   if (!isDedalusMachineHookEnabled()) {
     return job();

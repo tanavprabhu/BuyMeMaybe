@@ -29,7 +29,6 @@ function detailsComplete(cat: SellerListingCategoryKey, details: Record<string, 
   return slots.every((s) => (details[s.id] ?? "").trim().length > 0);
 }
 
-// Renders the mobile-first create flow that uploads photo(s) and kicks off generation.
 export default function CreatePage() {
   const [files, setFiles] = useState<File[]>([]);
   const [sellerCategory, setSellerCategory] = useState<SellerListingCategoryKey | "">("");

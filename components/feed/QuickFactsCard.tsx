@@ -1,5 +1,3 @@
-// Two-column facts: default is a bordered card; `inline` is flat for embedding in the media carousel.
-
 export type QuickFactRow = { label: string; value: string; valueClassName?: string };
 
 export function QuickFactsCard(props: { rows: QuickFactRow[]; variant?: "card" | "inline" }) {

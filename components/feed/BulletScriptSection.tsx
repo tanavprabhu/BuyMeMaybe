@@ -9,7 +9,6 @@ function BulletList(props: {
   items: string[];
   muted?: boolean;
   compact?: boolean;
-  /** Shown when `items` is empty (e.g. "None" for condition notes). */
   emptyLabel?: string;
 }) {
   if (props.items.length === 0) {
@@ -51,14 +50,10 @@ function BulletList(props: {
   );
 }
 
-// Bullet list with optional horizontal paging when content overflows.
 export function BulletScriptSection(props: {
   bullets: string[];
-  /** One scrollable column, all bullets (e.g. in-card carousel). */
   embedded?: boolean;
-  /** Overrides the section eyebrow (default: Highlights). */
   title?: string;
-  /** When embedded and bullets are empty, shown instead of the default empty copy. */
   emptyLabel?: string;
 }) {
   const title = props.title ?? "Highlights";

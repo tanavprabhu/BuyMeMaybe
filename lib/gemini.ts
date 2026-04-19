@@ -2,7 +2,6 @@ import { runPipeline, type ItemAnalysis, type Caption, type RunPipelineOptions }
 
 export type { ItemAnalysis, Caption, RunPipelineOptions };
 
-// Runs the xAI 4-step pipeline and returns a full marketplace listing from one or more photos of the same item.
 export async function analyzeItem(
   images: { bytes: Buffer; mimeType: string }[],
   opts?: RunPipelineOptions,

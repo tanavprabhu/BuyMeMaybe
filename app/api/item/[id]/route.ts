@@ -3,7 +3,6 @@ import { resolve } from "node:path";
 import { NextResponse } from "next/server";
 import { prisma } from "../../../../lib/db";
 
-// Deletes a public file path under /public if it exists, returning an error message on failure.
 function safeDeletePublicPath(publicUrl: string | null | undefined): string | null {
   if (!publicUrl || !publicUrl.startsWith("/")) return null;
   const publicRoot = resolve(process.cwd(), "public");
@@ -19,7 +18,6 @@ function safeDeletePublicPath(publicUrl: string | null | undefined): string | nu
   }
 }
 
-// Deletes an item row and associated generated/uploaded files.
 export async function DELETE(_req: Request, ctx: { params: Promise<{ id: string }> }) {
   const { id } = await ctx.params;
   try {

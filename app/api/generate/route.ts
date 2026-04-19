@@ -8,7 +8,6 @@ import { writeGeneratedVideo } from "../../../lib/storage";
 
 type GenerateRequest = { jobId?: string };
 
-// Runs the full generation pipeline (voice → video → ffmpeg → DB insert) for a job id.
 async function runGeneration(jobId: string): Promise<void> {
   const job = getJob(jobId);
   if (!job || job.status !== "ready-to-generate") throw new Error("Job is not ready to generate.");
@@ -23,7 +22,6 @@ async function runGeneration(jobId: string): Promise<void> {
   });
 
   await withDedalusMachineHooks(`generate:${jobId}`, async () => {
-    // Final audio comes from Grok Imagine on the mp4. ElevenLabs stays in `lib/voice.ts` + `muxVoiceover` if you pass `voiceMp3` to `makeFinalVideo`.
     const primary = images[0]!;
     const rawVideo =
       images.length >= 2
@@ -69,7 +67,6 @@ async function runGeneration(jobId: string): Promise<void> {
   });
 }
 
-// Kicks off async generation for a previously analyzed job and returns immediately for polling.
 export async function POST(req: Request) {
   try {
     const body = (await req.json().catch(() => ({}))) as GenerateRequest;

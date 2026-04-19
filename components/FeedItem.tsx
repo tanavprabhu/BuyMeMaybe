@@ -21,23 +21,17 @@ export type FeedItemModel = {
   likes: number;
   createdAt?: string;
   script?: string;
-  /** Create form: brand · category */
   listingLine1?: string | null;
-  /** Create form: size · condition */
   listingLine2?: string | null;
-  /** Create form: extra notes */
   listingExtra?: string | null;
-  /** Create form: clothing | kitchen | … (drives quick-fact labels) */
   sellerCategoryKey?: string | null;
 };
 
 const MEDIA_PANELS = 3;
 
-// Each slide must stay exactly one scrollport wide (flex default min-width:auto otherwise widens slide 3 with long text).
 const CAROUSEL_SLIDE =
   "relative min-h-0 w-full min-w-0 shrink-0 grow-0 basis-full snap-start snap-always overflow-x-hidden";
 
-// Splits "a · b · c" lines from the create form (same separator as `joinListingLine`).
 function partsFromListingLine(line: string | null | undefined): string[] {
   if (!line?.trim()) return [];
   return line
@@ -56,11 +50,9 @@ function postedChip(iso?: string): string {
   return `${days} days ago`;
 }
 
-// Full-height listing: swipe the media area for video → quick facts → highlights.
 export function FeedItem(props: {
   item: FeedItemModel;
   active: boolean;
-  /** User tapped “sound on” once this session — active clips can play unmuted. */
   feedAudioOn: boolean;
   onUnlockFeedAudio: () => void;
   mine: boolean;
@@ -76,7 +68,6 @@ export function FeedItem(props: {
     return t ? [t] : [];
   }, [props.item.listingExtra]);
 
-  // Full-width square in the carousel (swipe only — no arrow buttons).
   const mediaSquareClass =
     "relative w-full min-w-0 max-w-full aspect-square overflow-hidden rounded-2xl border-2 border-bmm-brown";
 
@@ -99,7 +90,6 @@ export function FeedItem(props: {
 
   const priceLabel = useMemo(() => formatUsdPrice(props.item.askingPrice), [props.item.askingPrice]);
 
-  // Quick facts: seller/shipping/posted plus structured create-form lines (labels depend on seller category).
   const quickRowsCarousel: QuickFactRow[] = useMemo(() => {
     const postedShort = (() => {
       const c = postedChip(props.item.createdAt);
@@ -146,7 +136,6 @@ export function FeedItem(props: {
   const videoActive = props.active && mediaPanel === 0;
   const videoMuted = !videoActive || !props.feedAudioOn;
 
-  // Muted autoplay is allowed; unmuted playback requires a prior user gesture (`onUnlockFeedAudio`).
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
@@ -170,7 +159,6 @@ export function FeedItem(props: {
                 ref={carouselRef}
                 className="flex w-full min-w-0 touch-pan-x snap-x snap-mandatory overflow-x-auto overflow-y-hidden no-scrollbar"
               >
-                {/* Panel 0 — square video */}
                 <div className={CAROUSEL_SLIDE}>
                   <div className={`${mediaSquareClass} bg-black`}>
                       <video
@@ -213,7 +201,6 @@ export function FeedItem(props: {
                     </div>
                   </div>
 
-                {/* Panel 1 — quick facts */}
                 <div className={CAROUSEL_SLIDE}>
                   <div className={`${mediaSquareClass} flex flex-col bg-bmm-cream`}>
                       <div className="flex min-h-0 min-w-0 flex-1 flex-col justify-center px-3 pb-3 pt-4">
@@ -222,7 +209,6 @@ export function FeedItem(props: {
                     </div>
                   </div>
 
-                {/* Panel 2 — seller extra notes + share / remove */}
                 <div className={CAROUSEL_SLIDE}>
                   <div className={`${mediaSquareClass} flex flex-col bg-bmm-cream`}>
                       <div className="flex min-h-0 min-w-0 flex-1 flex-col px-3 pb-2 pt-4">

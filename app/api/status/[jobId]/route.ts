@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { jobToPublicJson } from "../../../../lib/job-public";
 import { getJob } from "../../../../lib/jobs";
 
-// Returns the current job state for client polling during generation.
 export async function GET(_req: Request, ctx: { params: Promise<{ jobId: string }> }) {
   const { jobId: rawJobId } = await ctx.params;
   const jobId = rawJobId.trim();

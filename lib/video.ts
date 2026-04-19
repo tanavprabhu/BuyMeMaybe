@@ -3,14 +3,11 @@ import { loadRootEnv } from "./root-env";
 export type VideoParams = {
   videoPrompt: string;
   durationSec?: number;
-  /** Single-image image-to-video (first frame from this still). */
   imageBytes?: Buffer;
   mimeType?: string;
-  /** Two or more stills of the same item → xAI reference-to-video (do not combine with `image`). */
   referenceImages?: { bytes: Buffer; mimeType: string }[];
 };
 
-// Kicks off a Grok Imagine video job and returns the xAI request_id for polling.
 async function submitJob(params: VideoParams): Promise<string> {
   loadRootEnv();
   const key = process.env.XAI_API_KEY;
@@ -71,7 +68,6 @@ type StatusResponse = {
   error?: string;
 };
 
-// Polls Grok Imagine for a specific job until done or failed, sleeping pollMs between checks.
 async function pollUntilDone(requestId: string, pollMs = 5000): Promise<string> {
   loadRootEnv();
   const key = process.env.XAI_API_KEY;
@@ -99,7 +95,6 @@ async function pollUntilDone(requestId: string, pollMs = 5000): Promise<string> 
   throw new Error("Grok Imagine timed out after 15 minutes");
 }
 
-// Generates a talking-item video via Grok Imagine and returns the mp4 bytes.
 export async function generateTalkingVideo(params: VideoParams): Promise<Buffer> {
   const t0 = Date.now();
   const refCount = (params.referenceImages ?? []).filter((r) => r.bytes.length > 0).length;

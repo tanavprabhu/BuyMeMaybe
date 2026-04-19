@@ -35,17 +35,14 @@ export type RunPipelineOptions = {
   seller?: SellerListingSpecs;
 };
 
-// Resolves the vision model id (must accept image + text; see xAI console for availability).
 function visionModel(): string {
   return process.env.XAI_VISION_MODEL ?? "grok-4-1-fast-non-reasoning";
 }
 
-// Resolves the text model id for writer/director/captions steps (JSON / structured output).
 function textModel(): string {
   return process.env.XAI_TEXT_MODEL ?? "grok-4-1-fast-non-reasoning";
 }
 
-// Pretty-logs a pipeline step's name, elapsed milliseconds, and tokens used.
 function logStep(
   label: string,
   ms: number,
@@ -59,7 +56,6 @@ function logStep(
 
 type VisionShot = { bytes: Buffer; mime: string };
 
-// Sends a vision prompt + one or more images through xAI and parses the returned JSON object.
 async function callVision(prompt: string, shots: VisionShot[]): Promise<Record<string, unknown>> {
   const content: Array<{ type: "text"; text: string } | { type: "image_url"; image_url: { url: string } }> = [
     { type: "text", text: prompt },
@@ -81,7 +77,6 @@ async function callVision(prompt: string, shots: VisionShot[]): Promise<Record<s
   return { __parsed: JSON.parse(raw), __usage: res.usage };
 }
 
-// Sends a text-only prompt through xAI and parses the returned JSON object.
 async function callText(prompt: string, temperature = 1.0): Promise<Record<string, unknown>> {
   const res = await getXaiOpenAI().chat.completions.create({
     model: textModel(),
@@ -93,7 +88,6 @@ async function callText(prompt: string, temperature = 1.0): Promise<Record<strin
   return { __parsed: JSON.parse(raw), __usage: res.usage };
 }
 
-// Orchestrates the three sequential xAI calls that produce a full marketplace listing from one or more photos.
 export async function runPipeline(
   images: { bytes: Buffer; mimeType: string }[],
   opts?: RunPipelineOptions,

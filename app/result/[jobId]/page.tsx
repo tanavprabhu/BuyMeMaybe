@@ -13,18 +13,15 @@ type JobStatus =
 
 type StatusResponse = { jobId: string } & JobStatus;
 
-// Renders the result page that polls generation status and plays the finished video.
 export default function ResultPage(props: { params: Promise<{ jobId: string }> }) {
   const [jobId, setJobId] = useState<string | null>(null);
   const [state, setState] = useState<JobStatus>({ status: "generating" });
 
   useEffect(() => {
-    // Loads the job id from route params.
     void props.params.then((p) => setJobId(p.jobId));
   }, [props.params]);
 
   useEffect(() => {
-    // Polls the status endpoint until the job becomes ready or errors.
     if (!jobId) return;
     let cancelled = false;
     const poll = async () => {
@@ -45,7 +42,6 @@ export default function ResultPage(props: { params: Promise<{ jobId: string }> }
   const ready = state.status === "ready" ? state.itemId : null;
 
   useEffect(() => {
-    // Marks generated items as owned by this browser so they can be removed later.
     if (!ready) return;
     addMyItemId(ready);
   }, [ready]);

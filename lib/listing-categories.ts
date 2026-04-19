@@ -1,5 +1,3 @@
-// Seller-picked department on the create form (drives which detail fields are shown).
-
 export const SELLER_CATEGORY_KEYS = ["clothing", "kitchen", "electronics", "decor", "books", "random"] as const;
 export type SellerListingCategoryKey = (typeof SELLER_CATEGORY_KEYS)[number];
 
@@ -10,7 +8,6 @@ export type ListingFieldSlot = {
 };
 
 export type ListingCategoryFormDef = {
-  /** Short label on category pills */
   shortLabel: string;
   line1: [ListingFieldSlot, ListingFieldSlot];
   line2: [ListingFieldSlot, ListingFieldSlot];
@@ -89,7 +86,6 @@ export function isSellerListingCategoryKey(s: string): s is SellerListingCategor
   return (SELLER_CATEGORY_KEYS as readonly string[]).includes(s);
 }
 
-/** Row labels for the feed quick-facts split of listingLine1 / listingLine2. */
 export function quickFactLabelsForSellerCategory(key: string | null | undefined): {
   line1: [string, string];
   line2: [string, string];

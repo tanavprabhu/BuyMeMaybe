@@ -13,14 +13,12 @@ type AnalyzeResponse = {
   analysis: unknown;
 };
 
-// Converts a MIME type string to an image file extension we support.
 function mimeToExt(mime: string): "jpg" | "png" | "webp" {
   if (mime === "image/png") return "png";
   if (mime === "image/webp") return "webp";
   return "jpg";
 }
 
-// Reads optional listing spec fields from multipart form data.
 function readSellerSpecs(form: FormData): SellerListingSpecs {
   const g = (k: string) => String(form.get(k) ?? "").trim();
   return {
@@ -32,7 +30,6 @@ function readSellerSpecs(form: FormData): SellerListingSpecs {
   };
 }
 
-// Collects one or more listing photos: prefers repeated `images` entries, falls back to legacy `image`.
 function collectListingFiles(form: FormData): File[] {
   const multi = form
     .getAll("images")
@@ -43,7 +40,6 @@ function collectListingFiles(form: FormData): File[] {
   return [];
 }
 
-// Accepts uploaded image(s), runs the AI analysis pipeline, and stores the result in an in-memory job.
 export async function POST(req: Request) {
   try {
     const form = await req.formData();

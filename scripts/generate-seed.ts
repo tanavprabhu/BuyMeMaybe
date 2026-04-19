@@ -9,7 +9,6 @@ import { generateTalkingVideo } from "../lib/video";
 import { makeFinalVideo } from "../lib/ffmpeg";
 import { writeGeneratedVideo, writeUpload } from "../lib/storage";
 
-// Maps a file extension to a MIME type for image uploads.
 function extToMime(ext: string): { mime: string; uploadExt: "jpg" | "png" | "webp" } {
   const e = ext.toLowerCase();
   if (e === ".png") return { mime: "image/png", uploadExt: "png" };
@@ -17,7 +16,6 @@ function extToMime(ext: string): { mime: string; uploadExt: "jpg" | "png" | "web
   return { mime: "image/jpeg", uploadExt: "jpg" };
 }
 
-// Runs the full pipeline for one seed photo and writes DB + public assets.
 async function generateOne(imagePath: string): Promise<void> {
   const id = randomUUID();
   const ext = extname(imagePath);
@@ -63,7 +61,6 @@ async function generateOne(imagePath: string): Promise<void> {
   console.log(`✓ [seed] created item ${id}`);
 }
 
-// Generates seed items for every image file in seed-photos/, sequentially to respect API quotas.
 async function main() {
   config({ path: ".env" });
   config({ path: ".env.local", override: true });

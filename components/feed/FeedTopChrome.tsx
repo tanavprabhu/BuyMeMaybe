@@ -1,7 +1,6 @@
 import { BrandMark } from "../BrandMark";
 import { CategoryPills, type CategoryId } from "../CategoryPills";
 
-// Feed header: grouped logo + wordmark, create action, category chips.
 export function FeedTopChrome(props: {
   category: CategoryId;
   onCategoryChange: (next: CategoryId) => void;

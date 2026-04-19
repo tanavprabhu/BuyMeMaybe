@@ -1,5 +1,3 @@
-// Expands trailing US state abbreviations (e.g. "Richmond, VA" → "Richmond, Virginia") for display.
-
 const US_STATE_NAMES: Record<string, string> = {
   AL: "Alabama",
   AK: "Alaska",
@@ -64,7 +62,6 @@ function expandTrailingStateSegment(segment: string): string {
   return `${beforeComma.trimEnd()}, ${full}`;
 }
 
-// Expands the first "City, ST" segment; preserves any " · " tail segments unchanged.
 export function expandLocationForDisplay(raw: string): string {
   const t = raw.trim();
   if (!t) return t;

@@ -1,37 +1,104 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# BuyMeMaybe
 
-## Getting Started
+AI-generated **square video listings**: snap a photo, add a few details, and the app produces a short talking-item clip for a TikTok-style feed.
 
-First, run the development server:
+**Sites**
+
+- Marketing / info: [buymemaybe.us](https://buymemaybe.us)
+- Web app: [app.buymemaybe.us](https://app.buymemaybe.us)
+
+---
+
+## The app
+
+1. **Create** — Upload up to 7 photos, pick category + listing lines, optional price/notes.
+2. **Pipeline** — Vision + writer + director prompts (xAI) → Grok Imagine **10s, 1:1** video with on-model VO.
+3. **Feed** — Vertical snap scroll, category filters, likes, highlight links, delete for “your” listings (local marker).
+
+Stack: **Next.js 16** (App Router), **React 19**, **Tailwind 4**, **Prisma + SQLite**, **xAI** (chat/vision + Grok Imagine), **FFmpeg** (square export / optional mux).
+
+---
+
+## Quick start
+
+### Install
+
+```bash
+npm install
+```
+
+### Environment
+
+Copy `.env.example` to `.env.local` and set at least:
+
+- `XAI_API_KEY` — xAI console
+- `DATABASE_URL` — default `file:./dev.db` is fine locally
+
+### Database
+
+```bash
+npx prisma migrate deploy
+npx prisma generate
+```
+
+### Dev server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000). Use `npm run dev -- -H 0.0.0.0` to test on a phone over LAN.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Seed the feed (optional)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Put images in `seed-photos/`, then:
 
-## Learn More
+```bash
+npm run seed
+```
 
-To learn more about Next.js, take a look at the following resources:
+Runs `scripts/generate-seed.ts` (full analyze → video → DB + `public/` assets). Sequential to respect API limits.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+---
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Scripts
 
-## Deploy on Vercel
+| Command | Purpose |
+|--------|---------|
+| `npm run seed` | Generate listings from `seed-photos/` |
+| `npx tsx scripts/remove-first-four-items.ts` | Deletes the **4 oldest** `Item` rows by `createdAt` (and their `public/` video + image files). Use once to drop early seed/demo listings. |
+| `npx tsx scripts/remove-item-by-name.ts "Partial title"` | Deletes every `Item` whose `itemName` **contains** the substring (plus `public/` assets). |
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-# BuyMeMaybe
+## Project layout
+
+```
+BuyMeMaybe/
+├── app/                    # Routes + API
+│   ├── page.tsx            # Feed
+│   ├── create/page.tsx     # New listing
+│   ├── result/[jobId]/     # Generation status + video
+│   └── api/                # analyze, generate, status, feed, like, item
+├── components/             # FeedItem, FeedScroller, chrome, etc.
+├── lib/                    # pipeline, video, ffmpeg, db, prompts, …
+├── prisma/
+│   ├── schema.prisma
+│   └── migrations/
+├── public/
+│   ├── brand/
+│   ├── generated/          # mp4s (gitignored)
+│   └── uploads/            # listing images (gitignored)
+├── scripts/
+│   ├── generate-seed.ts
+│   └── remove-first-four-items.ts
+└── README.md
+```
+
+---
+
+## Production notes
+
+- Point `DATABASE_URL` at your hosted DB if not using file SQLite.
+- Ensure `XAI_API_KEY` (and any model overrides) are set in the deployment environment.
+- Static assets under `public/generated` and `public/uploads` must persist on disk (or move to object storage in a future iteration).

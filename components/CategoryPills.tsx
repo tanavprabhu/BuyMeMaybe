@@ -12,7 +12,6 @@ const CATEGORIES = [
 
 export type CategoryId = (typeof CATEGORIES)[number]["id"];
 
-// Renders a horizontal category filter bar and notifies the parent on changes.
 export function CategoryPills(props: {
   value: CategoryId;
   onChange: (next: CategoryId) => void;

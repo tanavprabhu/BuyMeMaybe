@@ -9,7 +9,6 @@ import type { Caption } from "./pipeline";
 
 const execFileAsync = promisify(execFile);
 
-// Reads container duration in seconds via ffprobe (same binary bundle as ffmpeg).
 async function ffprobeDurationSeconds(mediaPath: string): Promise<number> {
   const { stdout } = await execFileAsync(
     "ffprobe",
@@ -30,14 +29,12 @@ async function ffprobeDurationSeconds(mediaPath: string): Promise<number> {
 
 type TempPaths = { workDir: string; paths: string[] };
 
-// Creates a temporary working directory and tracks created paths for cleanup.
 function createTempWorkspace(): TempPaths {
   const workDir = join(tmpdir(), "buymemaybe", randomUUID());
   mkdirSync(workDir, { recursive: true });
   return { workDir, paths: [] };
 }
 
-// Writes a buffer to a unique temp file and returns its path.
 function writeTempFile(ws: TempPaths, filename: string, bytes: Buffer): string {
   const p = join(ws.workDir, filename);
   writeFileSync(p, bytes);
@@ -45,7 +42,6 @@ function writeTempFile(ws: TempPaths, filename: string, bytes: Buffer): string {
   return p;
 }
 
-// Writes an SRT subtitle file from caption timings and returns the file path.
 function writeCaptionsSrt(ws: TempPaths, captions: Caption[]): string {
   const toSrtTime = (ms: number) => {
     const clamped = Math.max(0, Math.floor(ms));
@@ -73,7 +69,6 @@ function writeCaptionsSrt(ws: TempPaths, captions: Caption[]): string {
   return p;
 }
 
-// Runs a fluent-ffmpeg command and resolves once the output file is written.
 function runFfmpeg(cmd: ffmpeg.FfmpegCommand): Promise<void> {
   return new Promise((resolve, reject) => {
     cmd.on("error", (err, _stdout, stderr) => {
@@ -84,7 +79,6 @@ function runFfmpeg(cmd: ffmpeg.FfmpegCommand): Promise<void> {
   });
 }
 
-// Ensures the input video is 1:1 square at 1080×1080 — center-crop only (no stretch, no letterbox padding).
 export async function ensureSquare1080(videoBytes: Buffer): Promise<Buffer> {
   const ws = createTempWorkspace();
   try {
@@ -96,7 +90,6 @@ export async function ensureSquare1080(videoBytes: Buffer): Promise<Buffer> {
       "scale=1080:1080:force_original_aspect_ratio=increase," +
       "crop=1080:1080:(iw-ow)/2:(ih-oh)/2";
 
-    // Avoid forcing -r 30: that can duplicate/drop frames vs Grok’s source and skew A/V after mux.
     await runFfmpeg(
       ffmpeg(inPath)
         .outputOptions(["-movflags +faststart", "-pix_fmt yuv420p"])
@@ -134,7 +127,6 @@ async function hasAudioStream(mediaPath: string): Promise<boolean> {
   }
 }
 
-// Same 1080×1080 square as `ensureSquare1080`, but keeps the source audio (e.g. Grok Imagine narration) as AAC.
 export async function ensureSquare1080KeepNativeAudio(videoBytes: Buffer): Promise<Buffer> {
   const ws = createTempWorkspace();
   try {
@@ -181,8 +173,6 @@ export async function ensureSquare1080KeepNativeAudio(videoBytes: Buffer): Promi
   }
 }
 
-// Muxes an mp3 voiceover onto an mp4: audio is trimmed/padded to match the **video** duration exactly.
-// (ElevenLabs length ≠ Grok length; `-shortest` was cutting whichever stream was shorter and felt “out of sync”.)
 export async function muxVoiceover(videoBytes: Buffer, mp3Bytes: Buffer): Promise<Buffer> {
   const ws = createTempWorkspace();
   try {
@@ -231,7 +221,6 @@ export async function muxVoiceover(videoBytes: Buffer, mp3Bytes: Buffer): Promis
   }
 }
 
-// Final 1:1 square mp4. Default: keep Grok Imagine’s native audio. Pass `voiceMp3` to replace with ElevenLabs (legacy).
 export async function makeFinalVideo(params: {
   rawVideoMp4: Buffer;
   voiceMp3?: Buffer | null;

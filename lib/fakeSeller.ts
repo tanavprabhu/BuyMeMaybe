@@ -1,4 +1,3 @@
-// Pools of fake handles and US cities used to make marketplace listings feel populated.
 const HANDLES = [
   "@thriftgirliepop", "@dormroomdump", "@lukewarm.mia", "@kaitlynsellsrocks",
   "@nobonebroth", "@brynnposting", "@tinytowerz", "@moodyaudrey",
@@ -15,7 +14,6 @@ const LOCATIONS = [
   "Iowa City, IA", "Burlington, VT", "Providence, RI", "Philly, PA",
 ];
 
-// Returns a random fake seller handle and US city for marketplace flavor.
 export function randomSeller(): { name: string; location: string } {
   return {
     name: HANDLES[Math.floor(Math.random() * HANDLES.length)],

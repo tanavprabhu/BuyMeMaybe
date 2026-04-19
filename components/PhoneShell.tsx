@@ -1,6 +1,5 @@
 "use client";
 
-// Wraps the app in a centered iPhone-style frame on wider viewports; full-bleed on small phones.
 export function PhoneShell(props: { children: React.ReactNode }) {
   return (
     <div className="phone-root flex min-h-dvh w-full flex-col bg-bmm-sky md:min-h-dvh md:items-center md:justify-center md:bg-gradient-to-b md:from-zinc-700 md:to-zinc-900 md:py-6">

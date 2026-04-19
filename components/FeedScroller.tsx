@@ -9,7 +9,6 @@ import type { CategoryId } from "./CategoryPills";
 
 type FeedResponse = { items: FeedItemModel[]; nextCursor: string | null };
 
-// Renders the vertically snap-scrolling feed and handles fetching/pagination and autoplay selection.
 export function FeedScroller(props: { highlightId?: string | null }) {
   const [category, setCategory] = useState<CategoryId>("all");
   const [items, setItems] = useState<FeedItemModel[]>([]);
@@ -17,7 +16,6 @@ export function FeedScroller(props: { highlightId?: string | null }) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [mineIds, setMineIds] = useState<Set<string>>(new Set());
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  /** After one tap, feed videos may play with sound (browser autoplay rules). */
   const [feedAudioOn, setFeedAudioOn] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
   const activeIdRef = useRef<string | null>(null);
@@ -28,7 +26,6 @@ export function FeedScroller(props: { highlightId?: string | null }) {
   const initialCategory = useMemo(() => category, [category]);
 
   async function loadFirst(nextCategory: CategoryId) {
-    // Fetches the first page for a category and resets state.
     const res = await fetch(`/api/feed?category=${encodeURIComponent(nextCategory)}&limit=10`);
     const json = (await res.json()) as FeedResponse;
     setItems(json.items ?? []);
@@ -37,7 +34,6 @@ export function FeedScroller(props: { highlightId?: string | null }) {
   }
 
   const loadMore = useCallback(async () => {
-    // Fetches the next page for the current category and appends to the feed.
     if (!cursor) return;
     const res = await fetch(
       `/api/feed?category=${encodeURIComponent(category)}&limit=10&cursor=${encodeURIComponent(cursor)}`,
@@ -48,7 +44,6 @@ export function FeedScroller(props: { highlightId?: string | null }) {
   }, [cursor, category]);
 
   useEffect(() => {
-    // Loads locally-owned listing ids for delete controls.
     setMineIds(readMyItemIds());
   }, []);
 
@@ -70,19 +65,16 @@ export function FeedScroller(props: { highlightId?: string | null }) {
   }, []);
 
   useEffect(() => {
-    // Loads the initial feed.
     void loadFirst(initialCategory);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    // Reloads the feed when the category changes.
     void loadFirst(category);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [category]);
 
   useEffect(() => {
-    // Autoplays the visible video by tracking the section nearest the center of the viewport.
     const root = rootRef.current;
     if (!root) return;
 
@@ -110,7 +102,6 @@ export function FeedScroller(props: { highlightId?: string | null }) {
   }, [loadMore, items]);
 
   useEffect(() => {
-    // Scrolls the feed to a highlighted item id (used after creation).
     if (!highlight) return;
     const root = rootRef.current;
     if (!root) return;
@@ -119,7 +110,6 @@ export function FeedScroller(props: { highlightId?: string | null }) {
   }, [highlight, items]);
 
   async function deleteMine(id: string) {
-    // Deletes a locally-owned listing from DB and removes it from feed state.
     if (deletingId) return;
     if (!window.confirm("Remove this listing permanently?")) return;
     setDeletingId(id);

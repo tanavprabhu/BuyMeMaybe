@@ -1,5 +1,3 @@
-// Turns stored listing script / notes into short, scannable bullet strings for UI.
-
 const MAX_BULLET_LEN = 140;
 
 function trimBullet(s: string): string {
@@ -13,7 +11,6 @@ function splitLongLine(line: string): string[] {
   const t = line.trim();
   if (!t) return [];
   if (t.length <= MAX_BULLET_LEN) return [t];
-  // Prefer sentence boundaries inside very long single lines.
   const sentences = t
     .split(/(?<=[.!?])\s+/)
     .map((x) => x.trim())
@@ -43,7 +40,6 @@ function splitSentences(text: string): string[] {
   return splitLongLine(t);
 }
 
-// Converts arbitrary script text into marketplace-style bullet lines.
 export function scriptToBullets(script: string): string[] {
   const raw = script.trim();
   if (!raw) return [];
@@ -68,7 +64,6 @@ export function scriptToBullets(script: string): string[] {
   return splitSentences(single).map(trimBullet).filter(Boolean);
 }
 
-// Splits bullets into a primary page (purchase decision) and overflow page.
 export function partitionBullets(bullets: string[], primaryMax: number): { primary: string[]; extra: string[] } {
   if (bullets.length <= primaryMax) return { primary: bullets, extra: [] };
   return {

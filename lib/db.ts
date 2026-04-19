@@ -12,14 +12,10 @@ function generatedClientMtime(): number {
   }
 }
 
-// Production: one PrismaClient on globalThis (standard Next.js pattern).
 function prismaProduction(): PrismaClient {
   return (globalForPrisma.prisma ??= new PrismaClient());
 }
 
-// Development: after `prisma generate`, the bundled client updates on disk but a cached PrismaClient
-// still has the old datamodel — causing "Unknown argument `listingLine1`". Recreate when the
-// generated client file changes (mtime), so a dev restart is not always required.
 let devPrisma: PrismaClient | undefined;
 let devPrismaGenMtime = 0;
 
@@ -37,7 +33,6 @@ function resolvePrisma(): PrismaClient {
   return process.env.NODE_ENV === "production" ? prismaProduction() : prismaDevelopment();
 }
 
-// Proxy keeps `import { prisma } from "./db"` stable while delegating to the current client in dev.
 export const prisma = new Proxy({} as PrismaClient, {
   get(_target, prop, receiver) {
     const real = resolvePrisma();
