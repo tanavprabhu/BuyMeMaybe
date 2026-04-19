@@ -1,18 +1,47 @@
-// Shared voice rules injected into each stage that writes user-facing copy.
-const VOICE_RULES = `
+const VOICE_RULES_DEFAULT = `
 ### Voice rules (STRICT)
-- Theatrical and dramatic. The item is soliloquizing — Hamlet if Hamlet were a slightly-chipped mug.
-- Current teen internet voice (2026, not 2018). Lowercase energy, fragments, mid-pivots, unserious self-roasting, "lowkey", "literally", "it's giving ___", "no because ___", "this is my villain arc", "girl" as exclamation. NEVER use "on fleek", "yeet", "sksksk", "lit", "totes".
-- Self-aware. The melodrama IS the joke. If it sounds like a sincere product description, rewrite.
-- Anti-corny filter: would a 17-year-old send this to their group chat as a laugh, or cringe? If cringe, rewrite.
-- Banned: direct "buy me please" without a twist, motivational-poster endings, "I may be used but I still have love to give" energy.
+- Theatrical but cute: the item is talking in first person, enthusiastic and lively, like a short social clip.
+- Current teen internet voice (2026). Lowercase energy is OK in moderation; stay clear when spoken aloud.
+- Self-aware humor; avoid sincere "please buy me" with no twist.
+- Banned: motivational-poster endings, "I may be used but I still have love to give" energy.
 `;
 
-// Prompt for step 1: analyze the photo and extract structured item attributes.
-export function visionPrompt(): string {
-  return `You are the VISION stage of a pipeline for BuyMeMaybe, a second-hand marketplace where items plead for a second life in theatrical monologues.
+const VOICE_RULES_WITH_SPECS = `
+### Voice rules (with seller specs)
+- Enthusiastic, cute, lively — clear voiceover-friendly punctuation.
+- Weave in the seller's facts naturally (brand, size, condition, price, care) — do not invent conflicting details.
+- Sound like a playful character introduction, not a corporate product listing.
+`;
 
-Look at the photo and return a JSON object with structured attributes only — no script yet, no monologue, no fluff.
+const SPEECH_DELIVERY_RULES = `
+### Speech delivery (STRICT — must fit a **10 second** clip)
+- **Clarity first**: simple everyday words where you can; avoid tongue-twisters, stacked clauses, and cramming facts into one breathless sentence.
+- **Reasonable pace**: write so a human could say it **unhurriedly** — short phrases, **commas and periods** where natural pauses belong; never “auctioneer” speed.
+- **Time budget**: aim for **~8–9 seconds** of speech at that moderate pace so small pauses still land **inside** the 10 second hard limit.
+`;
+
+export function visionPrompt(sellerBlock: string | null, imageCount = 1): string {
+  const sellerSection = sellerBlock
+    ? `
+
+### Seller-provided hints (use for itemName/price hints when they match the photo; do not contradict visible evidence)
+${sellerBlock}
+`
+    : "";
+
+  const multi =
+    imageCount >= 2
+      ? `
+
+### Multiple photos
+You are given **${imageCount}** photos of the **same physical item** (different angles, distances, or lighting). Merge evidence across all of them: infer true colors, logos, wear, and shape more reliably than from a single view. If one photo is clearer for a detail, prefer it but stay consistent with the others.
+`
+      : "";
+
+  return `You are the VISION stage of a pipeline for BuyMeMaybe, a second-hand marketplace where items plead for a second life in short video monologues.
+
+Look at the photo${imageCount >= 2 ? "s" : ""} and return a JSON object with structured attributes only — no script yet, no monologue, no fluff.
+${multi}
 
 Return ONLY this JSON (no code fences, no prose):
 
@@ -22,32 +51,47 @@ Return ONLY this JSON (no code fences, no prose):
   "condition": "one of: pristine | lightly used | well-loved | battle-scarred",
   "materials": "short comma list, e.g. 'glazed ceramic, cork'",
   "colors": "short comma list, e.g. 'chocolate brown, cream'",
-  "heroFeatures": ["3 to 5 short phrases describing visually distinctive or narratively interesting features, e.g. 'slight chip on the rim', 'warm interior light', 'handle shaped like a half-moon'"],
+  "heroFeatures": ["3 to 5 short phrases describing visually distinctive or narratively interesting features"],
   "background": "one sentence describing the setting visible behind the item",
-  "askingPrice": integer dollars — realistic second-hand price (most items $3–$40),
-  "originalPrice": integer dollars for new, or null if it doesn't apply,
+  "askingPrice": integer dollars — realistic second-hand price (most items $3–$40); if seller hinted a price and it fits, prefer that",
+  "originalPrice": integer dollars for new, or null if it doesn't apply",
   "urgencyDays": integer 4–62, chosen to feel incidental
 }
+${sellerSection}
 
 Return the JSON now.`;
 }
 
-// Prompt for step 2: write the theatrical monologue from the item attributes.
-export function writerPrompt(attrs: Record<string, unknown>): string {
-  return `You are the WRITER stage of a pipeline for BuyMeMaybe. You write the 15-second first-person monologue spoken by the item itself.
+export function writerPrompt(
+  attrs: Record<string, unknown>,
+  sellerBlock: string | null,
+): string {
+  const rules = sellerBlock ? VOICE_RULES_WITH_SPECS : VOICE_RULES_DEFAULT;
+  const specsSection = sellerBlock
+    ? `
+
+### Seller-provided facts (MUST appear faithfully in the spoken script)
+${sellerBlock}
+`
+    : "";
+
+  const lengthRule =
+    "### Length\n" +
+    "**About 24–34 words** (not more). At a clear, moderate speaking rate that must **finish within 10 seconds** of audio — if in doubt, cut words rather than speed up.\n";
+
+  return `You are the WRITER stage of BuyMeMaybe. You write the first-person monologue spoken by the item itself in a short square video.
 
 Item attributes (from the vision stage):
 ${JSON.stringify(attrs, null, 2)}
+${specsSection}
+${rules}
+${SPEECH_DELIVERY_RULES}
 
-${VOICE_RULES}
-
-### Length
-40–48 words. Spoken at ElevenLabs pace, that's ~13–15 seconds — fits the Grok Imagine 15-second video cap.
-
+${lengthRule}
 ### Structure
-- Open on a specific, observed detail (from heroFeatures or condition).
-- Escalate to melodrama fast.
-- Land one sharp, item-specific button line. Not "so buy me maybe" — something tied to THIS item.
+- Open with a friendly hook; mention what the item is.
+- Include concrete details (condition, size, brand, price) — especially from seller facts when present.
+- Close with a light, specific call to grab the deal (not generic begging).
 
 Return ONLY this JSON:
 
@@ -56,53 +100,40 @@ Return ONLY this JSON:
 }`;
 }
 
-// Prompt for step 3: compose the Grok Imagine video generation prompt from image attrs and script.
 export function directorPrompt(
   attrs: Record<string, unknown>,
   scriptData: { script: string },
+  imageCount = 1,
 ): string {
-  return `You are the DIRECTOR stage of a pipeline for BuyMeMaybe. You write the video generation prompt that will be sent to Grok Imagine Video (image-to-video AI). The model sees the original photo + this prompt; your job is to describe the animation.
+  const modeBlock =
+    imageCount >= 2
+      ? `You are the DIRECTOR stage for BuyMeMaybe. Write ONE paragraph: the **reference-to-video** prompt for Grok Imagine.
 
-Item attributes: ${JSON.stringify(attrs, null, 2)}
-Script being spoken: "${scriptData.script}"
+The generator receives **${imageCount}** reference stills of the **same item** (different angles). Your \`videoPrompt\` **must** weave in the placeholders **<IMAGE_1>** through **<IMAGE_${imageCount}>** at least once each (xAI convention), tying each to what that view shows (e.g. front print vs side silhouette vs back). Describe coherent motion and 3D-aware behavior using those views together — not separate unrelated scenes.
 
-### Style (must be present, adapted for this item)
-- Photorealistic. Preserve the EXACT item, lighting, texture, and background from the input image.
-- Add a very subtle, semi-transparent cartoon face to the item (two small dot eyes and a soft simple mouth), blended onto its surface like a light overlay, not 3D.
-- Minimal motion: soft blinking, tiny mouth movement synced to speech, gentle micro-tilt or bounce.
-- 9:16 vertical, 12 seconds.
+`
+      : `You are the DIRECTOR stage for BuyMeMaybe. Write ONE paragraph: the image-to-video prompt for Grok Imagine. The model sees the uploaded photo plus your text.
 
-### Do NOT
-- Turn into a cartoon or 3D character.
-- Add limbs, hair, or unrealistic features.
-- Change the background or the item's shape/color.
+`;
 
-### Customize
-Say WHERE on this specific item the face should sit (front of the mug body, chest of the sweater, screen of the phone, etc.). Match the face placement to the item's geometry.
+  return `${modeBlock}Item attributes: ${JSON.stringify(attrs, null, 2)}
+Spoken script (voiceover only — do NOT render this as big on-screen text): "${scriptData.script}"
 
-Return ONLY this JSON:
+### Output video (STRICT)
+- **10 seconds**, **1:1 square** aspect ratio (not vertical 9:16). Frame should feel balanced, not stretched tall.
+- **Spoken audio**: The item’s voiceover must sound **clear and easy to follow** at a **moderate, conversational pace** — not rushed or chipmunk-fast. Mouth motion stays **synced** to that measured speech and the line must **complete comfortably within the 10 second** runtime (no trailing syllables cut off).
+- **Photorealistic**: keep the item's color, logos, print, texture, and lighting **exact** vs the photo. Do not change the background or printed graphics on the item.
+- **Motion**: The item comes alive like a playful animated character — fabric lifts, wrinkles shift, energetic bounce/wiggle/dance; it **moves around the frame** (not stuck center). Sleeves/body move expressively **as fabric** — **no added limbs or human arms**.
+- **Face**: Semi-transparent **cartoon** eyes + mouth blended into the item surface (chest/front area appropriate to shape) — cute, expressive, blinking, **mouth motion synced to speech**. Feels part of the shirt/object, not a pasted sticker.
+- **Style**: Playful, Disney-like character energy (clearly animated motion, not subtle micro-movement only).
+- **NO** large captions, subtitles, or slogan text burned into the video. **NO** filling the frame with typography. Any words are spoken only (off-model).
 
-{
-  "videoPrompt": "the complete video prompt, one paragraph, 60–120 words"
-}`;
-}
-
-// Prompt for step 4: split the script into timed caption chunks for burn-in.
-export function captionsPrompt(scriptData: { script: string }): string {
-  return `You are the CAPTIONS stage of a pipeline for BuyMeMaybe. You split a spoken script into timed on-screen caption chunks for TikTok-style burn-in.
-
-Script: "${scriptData.script}"
-
-### Rules
-- 4 to 7 chunks, each 3–6 words.
-- Split at natural spoken breaks. Never mid-word.
-- Cover 0ms to approximately the full script duration. Assume 180ms per word as the speaking pace.
-- \`endMs\` of chunk N must equal \`startMs\` of chunk N+1.
-- Last chunk's \`endMs\` ≈ total spoken length.
+### Beat hint (adapt to item)
+- First ~1s: nearly still / flat, then a punchy "comes alive" moment, then playful motion through the rest.
 
 Return ONLY this JSON:
 
 {
-  "captions": [ { "text": "chunk text", "startMs": 0, "endMs": 2400 } ]
+  "videoPrompt": "single paragraph, 90–160 words, English"
 }`;
 }

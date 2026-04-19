@@ -1,4 +1,3 @@
-// Parses a failed fetch Response body into a single user-facing message string.
 export async function messageFromFailedResponse(res: Response): Promise<string> {
   const text = (await res.text()).trim();
   if (!text) return `Something went wrong (${res.status}).`;
@@ -11,7 +10,6 @@ export async function messageFromFailedResponse(res: Response): Promise<string> 
   return text;
 }
 
-// Rewrites provider-specific errors into short, actionable copy for the UI.
 export function friendlyApiMessage(raw: string): string {
   const t = raw.trim();
   if (/^402\b/i.test(t) || /out of credits|top up to continue|insufficient.*credit/i.test(t)) {

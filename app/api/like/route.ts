@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "../../../lib/db";
 
-// Increments the like count for an item and returns the updated total.
 export async function POST(req: Request) {
   const body = (await req.json().catch(() => ({}))) as { id?: string };
   if (!body.id) return NextResponse.json({ error: "Missing id" }, { status: 400 });

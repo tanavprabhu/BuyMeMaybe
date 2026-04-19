@@ -2,13 +2,15 @@
 
 import { useState } from "react";
 
-// Renders an optimistic like button that increments likes via POST /api/like.
-export function LikeButton(props: { itemId: string; initialLikes: number }) {
+export function LikeButton(props: {
+  itemId: string;
+  initialLikes: number;
+  layout?: "stack" | "inline";
+}) {
   const [likes, setLikes] = useState(props.initialLikes);
   const [busy, setBusy] = useState(false);
 
   async function onLike() {
-    // Optimistically increments likes and reconciles with the server response.
     if (busy) return;
     setBusy(true);
     setLikes((x) => x + 1);
@@ -27,6 +29,31 @@ export function LikeButton(props: { itemId: string; initialLikes: number }) {
     }
   }
 
+  const layout = props.layout ?? "stack";
+
+  if (layout === "inline") {
+    return (
+      <button
+        type="button"
+        onClick={onLike}
+        className="flex h-11 items-center gap-2 select-none"
+        aria-label="Like"
+      >
+        <span className="min-w-[1.25rem] text-left text-sm font-extrabold tabular-nums leading-none text-bmm-brown">
+          {likes}
+        </span>
+        <div
+          className={[
+            "grid h-11 w-11 shrink-0 place-items-center rounded-full border-2 border-bmm-brown bg-bmm-cream shadow-sm",
+            busy ? "opacity-70" : "hover:bg-bmm-peach",
+          ].join(" ")}
+        >
+          <span className="text-xl leading-none text-bmm-brown">♡</span>
+        </div>
+      </button>
+    );
+  }
+
   return (
     <button
       type="button"
@@ -34,6 +61,9 @@ export function LikeButton(props: { itemId: string; initialLikes: number }) {
       className="flex flex-col items-center gap-1 select-none"
       aria-label="Like"
     >
+      <div className="text-xs font-semibold text-bmm-brown tabular-nums">
+        {likes}
+      </div>
       <div
         className={[
           "grid h-11 w-11 place-items-center rounded-full border-2 border-bmm-brown bg-bmm-cream",
@@ -41,9 +71,6 @@ export function LikeButton(props: { itemId: string; initialLikes: number }) {
         ].join(" ")}
       >
         <span className="text-xl leading-none text-bmm-brown">♡</span>
-      </div>
-      <div className="text-xs font-semibold text-bmm-brown tabular-nums">
-        {likes}
       </div>
     </button>
   );

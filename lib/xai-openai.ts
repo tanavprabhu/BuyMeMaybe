@@ -3,7 +3,6 @@ import { loadRootEnv } from "./root-env";
 
 let cached: OpenAI | null = null;
 
-// Returns a shared OpenAI SDK client for xAI's OpenAI-compatible base URL (chat + vision).
 export function getXaiOpenAI(): OpenAI {
   loadRootEnv();
   const key = process.env.XAI_API_KEY;

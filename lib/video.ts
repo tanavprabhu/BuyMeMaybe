@@ -1,13 +1,13 @@
 import { loadRootEnv } from "./root-env";
 
 export type VideoParams = {
-  imageBytes: Buffer;
-  mimeType: string;
   videoPrompt: string;
   durationSec?: number;
+  imageBytes?: Buffer;
+  mimeType?: string;
+  referenceImages?: { bytes: Buffer; mimeType: string }[];
 };
 
-// Kicks off a Grok Imagine video job and returns the xAI request_id for polling.
 async function submitJob(params: VideoParams): Promise<string> {
   loadRootEnv();
   const key = process.env.XAI_API_KEY;
@@ -16,7 +16,38 @@ async function submitJob(params: VideoParams): Promise<string> {
       "XAI_API_KEY is missing. Add it to .env or .env.local in the project root, then restart `npm run dev`.",
     );
   }
-  const dataUrl = `data:${params.mimeType};base64,${params.imageBytes.toString("base64")}`;
+
+  const refs = (params.referenceImages ?? []).filter((r) => r.bytes.length > 0);
+  let body: Record<string, unknown>;
+
+  if (refs.length >= 2) {
+    body = {
+      model: "grok-imagine-video",
+      prompt: params.videoPrompt,
+      duration: params.durationSec ?? 10,
+      aspect_ratio: "1:1",
+      resolution: "720p",
+      reference_images: refs.map((r) => ({
+        url: `data:${r.mimeType};base64,${r.bytes.toString("base64")}`,
+      })),
+    };
+  } else {
+    const bytes = refs.length === 1 ? refs[0].bytes : params.imageBytes;
+    const mime = refs.length === 1 ? refs[0].mimeType : params.mimeType;
+    if (!bytes?.length || !mime) {
+      throw new Error(
+        "Grok Imagine: pass imageBytes + mimeType for one image, or referenceImages with at least two photos.",
+      );
+    }
+    body = {
+      model: "grok-imagine-video",
+      prompt: params.videoPrompt,
+      duration: params.durationSec ?? 10,
+      aspect_ratio: "1:1",
+      resolution: "720p",
+      image: { url: `data:${mime};base64,${bytes.toString("base64")}` },
+    };
+  }
 
   const res = await fetch("https://api.x.ai/v1/videos/generations", {
     method: "POST",
@@ -24,14 +55,7 @@ async function submitJob(params: VideoParams): Promise<string> {
       Authorization: `Bearer ${key}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      model: "grok-imagine-video",
-      prompt: params.videoPrompt,
-      image: dataUrl,
-      duration: params.durationSec ?? 12,
-      aspect_ratio: "9:16",
-      resolution: "720p",
-    }),
+    body: JSON.stringify(body),
   });
   if (!res.ok) throw new Error(`Grok Imagine submit ${res.status}: ${await res.text()}`);
   const json = (await res.json()) as { request_id: string };
@@ -44,7 +68,6 @@ type StatusResponse = {
   error?: string;
 };
 
-// Polls Grok Imagine for a specific job until done or failed, sleeping pollMs between checks.
 async function pollUntilDone(requestId: string, pollMs = 5000): Promise<string> {
   loadRootEnv();
   const key = process.env.XAI_API_KEY;
@@ -72,9 +95,10 @@ async function pollUntilDone(requestId: string, pollMs = 5000): Promise<string> 
   throw new Error("Grok Imagine timed out after 15 minutes");
 }
 
-// Generates a talking-item video via Grok Imagine and returns the mp4 bytes.
 export async function generateTalkingVideo(params: VideoParams): Promise<Buffer> {
   const t0 = Date.now();
+  const refCount = (params.referenceImages ?? []).filter((r) => r.bytes.length > 0).length;
+  console.log(`  [grok imagine] ${refCount >= 2 ? `reference-to-video (${refCount} refs)` : "image-to-video"}`);
   const id = await submitJob(params);
   console.log(`  [grok imagine] queued ${id}`);
   const url = await pollUntilDone(id);

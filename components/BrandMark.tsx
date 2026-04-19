@@ -1,6 +1,5 @@
 import Image from "next/image";
 
-// Renders the circular teacup logo with an optional wordmark for headers.
 export function BrandMark(props: {
   className?: string;
   wordmarkClassName?: string;

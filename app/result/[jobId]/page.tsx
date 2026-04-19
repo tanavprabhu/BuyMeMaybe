@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { BrandMark } from "../../../components/BrandMark";
+import { addMyItemId } from "../../../lib/client-owned-items";
 
 type JobStatus =
   | { status: "pending-analyze" }
@@ -12,18 +13,15 @@ type JobStatus =
 
 type StatusResponse = { jobId: string } & JobStatus;
 
-// Renders the result page that polls generation status and plays the finished video.
 export default function ResultPage(props: { params: Promise<{ jobId: string }> }) {
   const [jobId, setJobId] = useState<string | null>(null);
   const [state, setState] = useState<JobStatus>({ status: "generating" });
 
   useEffect(() => {
-    // Loads the job id from route params.
     void props.params.then((p) => setJobId(p.jobId));
   }, [props.params]);
 
   useEffect(() => {
-    // Polls the status endpoint until the job becomes ready or errors.
     if (!jobId) return;
     let cancelled = false;
     const poll = async () => {
@@ -43,9 +41,14 @@ export default function ResultPage(props: { params: Promise<{ jobId: string }> }
 
   const ready = state.status === "ready" ? state.itemId : null;
 
+  useEffect(() => {
+    if (!ready) return;
+    addMyItemId(ready);
+  }, [ready]);
+
   return (
-    <div className="min-h-dvh bg-bmm-sky text-bmm-brown">
-      <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col px-5 py-6">
+    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto bg-bmm-sky text-bmm-brown">
+      <div className="mx-auto flex w-full max-w-md flex-col px-5 py-6">
         <div className="flex items-center justify-between border-b-2 border-bmm-brown pb-3">
           <a
             href="/"
@@ -63,14 +66,14 @@ export default function ResultPage(props: { params: Promise<{ jobId: string }> }
             <div className="mt-2 text-sm text-bmm-brown/90">{state.message}</div>
             <a
               href="/create"
-              className="mt-4 inline-flex rounded-full border-2 border-bmm-brown bg-bmm-peach px-4 py-2 text-sm font-bold text-bmm-brown shadow-[3px_3px_0_#5c4033]"
+              className="mt-4 inline-flex rounded-full border-2 border-bmm-brown bg-bmm-peach px-4 py-2 text-sm font-bold text-bmm-brown"
             >
               try again
             </a>
           </div>
         ) : ready ? (
           <div className="mt-6 flex flex-1 flex-col">
-            <div className="relative aspect-[9/16] w-full overflow-hidden rounded-2xl border-2 border-bmm-brown bg-bmm-white shadow-[4px_4px_0_#5c4033]">
+            <div className="relative aspect-square w-full max-w-md mx-auto overflow-hidden rounded-2xl border-2 border-bmm-brown bg-bmm-white">
               <video
                 className="h-full w-full object-cover"
                 src={`/generated/${ready}.mp4`}
@@ -86,7 +89,7 @@ export default function ResultPage(props: { params: Promise<{ jobId: string }> }
               </div>
               <a
                 href={`/?highlight=${encodeURIComponent(ready)}`}
-                className="mt-5 inline-flex w-full items-center justify-center rounded-full border-2 border-bmm-brown bg-bmm-peach px-5 py-4 text-base font-bold text-bmm-brown shadow-[4px_4px_0_#5c4033] transition hover:brightness-95"
+                className="mt-5 inline-flex w-full items-center justify-center rounded-full border-2 border-bmm-brown bg-bmm-peach px-5 py-4 text-base font-bold text-bmm-brown transition hover:brightness-95"
               >
                 view in feed
               </a>

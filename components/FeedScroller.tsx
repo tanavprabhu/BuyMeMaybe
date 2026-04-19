@@ -1,26 +1,31 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { BrandMark } from "./BrandMark";
-import { CategoryPills, type CategoryId } from "./CategoryPills";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { messageFromFailedResponse } from "../lib/client-api-error";
+import { readMyItemIds, removeMyItemId } from "../lib/client-owned-items";
+import { FeedTopChrome } from "./feed/FeedTopChrome";
 import { FeedItem, type FeedItemModel } from "./FeedItem";
+import type { CategoryId } from "./CategoryPills";
 
 type FeedResponse = { items: FeedItemModel[]; nextCursor: string | null };
 
-// Renders the vertically snap-scrolling feed and handles fetching/pagination and autoplay selection.
 export function FeedScroller(props: { highlightId?: string | null }) {
   const [category, setCategory] = useState<CategoryId>("all");
   const [items, setItems] = useState<FeedItemModel[]>([]);
   const [cursor, setCursor] = useState<string | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [mineIds, setMineIds] = useState<Set<string>>(new Set());
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [feedAudioOn, setFeedAudioOn] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const activeIdRef = useRef<string | null>(null);
+  activeIdRef.current = activeId;
 
   const highlight = props.highlightId ?? null;
 
   const initialCategory = useMemo(() => category, [category]);
 
   async function loadFirst(nextCategory: CategoryId) {
-    // Fetches the first page for a category and resets state.
     const res = await fetch(`/api/feed?category=${encodeURIComponent(nextCategory)}&limit=10`);
     const json = (await res.json()) as FeedResponse;
     setItems(json.items ?? []);
@@ -28,8 +33,7 @@ export function FeedScroller(props: { highlightId?: string | null }) {
     setActiveId(json.items?.[0]?.id ?? null);
   }
 
-  async function loadMore() {
-    // Fetches the next page for the current category and appends to the feed.
+  const loadMore = useCallback(async () => {
     if (!cursor) return;
     const res = await fetch(
       `/api/feed?category=${encodeURIComponent(category)}&limit=10&cursor=${encodeURIComponent(cursor)}`,
@@ -37,22 +41,40 @@ export function FeedScroller(props: { highlightId?: string | null }) {
     const json = (await res.json()) as FeedResponse;
     setItems((prev) => [...prev, ...(json.items ?? [])]);
     setCursor(json.nextCursor ?? null);
-  }
+  }, [cursor, category]);
 
   useEffect(() => {
-    // Loads the initial feed.
+    setMineIds(readMyItemIds());
+  }, []);
+
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem("bmm-feed-audio") === "1") setFeedAudioOn(true);
+    } catch {
+      /* private mode */
+    }
+  }, []);
+
+  const unlockFeedAudio = useCallback(() => {
+    setFeedAudioOn(true);
+    try {
+      sessionStorage.setItem("bmm-feed-audio", "1");
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  useEffect(() => {
     void loadFirst(initialCategory);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
-    // Reloads the feed when the category changes.
     void loadFirst(category);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [category]);
 
   useEffect(() => {
-    // Autoplays the visible video by tracking the section nearest the center of the viewport.
     const root = rootRef.current;
     if (!root) return;
 
@@ -68,18 +90,18 @@ export function FeedScroller(props: { highlightId?: string | null }) {
         if (!id) continue;
         if (!best || d < best.dist) best = { id, dist: d };
       }
-      if (best && best.id !== activeId) setActiveId(best.id);
+      if (best && best.id !== activeIdRef.current) setActiveId(best.id);
 
       const nearEnd = root.scrollTop + root.clientHeight >= root.scrollHeight - root.clientHeight * 1.5;
       if (nearEnd) void loadMore();
     };
 
     root.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
     return () => root.removeEventListener("scroll", onScroll);
-  }, [activeId, cursor, category]);
+  }, [loadMore, items]);
 
   useEffect(() => {
-    // Scrolls the feed to a highlighted item id (used after creation).
     if (!highlight) return;
     const root = rootRef.current;
     if (!root) return;
@@ -87,39 +109,46 @@ export function FeedScroller(props: { highlightId?: string | null }) {
     if (target) target.scrollIntoView({ block: "start" });
   }, [highlight, items]);
 
-  function advanceFrom(id: string) {
-    // Scrolls to the next feed item, wrapping to the first when at the end.
-    const root = rootRef.current;
-    if (!root) return;
-    const sections = Array.from(root.querySelectorAll<HTMLElement>("[data-item-id]"));
-    const idx = sections.findIndex((s) => s.dataset.itemId === id);
-    if (idx < 0) return;
-    const next = sections[idx + 1] ?? sections[0];
-    next?.scrollIntoView({ behavior: "smooth", block: "start" });
+  async function deleteMine(id: string) {
+    if (deletingId) return;
+    if (!window.confirm("Remove this listing permanently?")) return;
+    setDeletingId(id);
+    try {
+      const res = await fetch(`/api/item/${encodeURIComponent(id)}`, { method: "DELETE" });
+      if (!res.ok) {
+        const msg = await messageFromFailedResponse(res);
+        window.alert(`Could not remove listing: ${msg}`);
+        return;
+      }
+      setItems((prev) => prev.filter((x) => x.id !== id));
+      removeMyItemId(id);
+      setMineIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+      if (activeId === id) {
+        const rest = items.filter((x) => x.id !== id);
+        setActiveId(rest[0]?.id ?? null);
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      window.alert(`Could not remove listing: ${msg}`);
+    } finally {
+      setDeletingId(null);
+    }
   }
 
   return (
-    <div className="relative h-dvh w-full bg-bmm-sky text-bmm-brown">
-      <div className="pointer-events-auto absolute left-0 right-0 top-0 z-20 border-b-2 border-bmm-brown bg-bmm-cream/95 backdrop-blur-sm">
-        <div className="flex items-center justify-between gap-2 px-3 py-2">
-          <BrandMark />
-          <a
-            href="/create"
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-full border-2 border-bmm-brown bg-bmm-peach text-xl font-bold text-bmm-brown shadow-[3px_3px_0_#5c4033] transition hover:brightness-95"
-            aria-label="Create listing"
-          >
-            ＋
-          </a>
-        </div>
-        <CategoryPills value={category} onChange={setCategory} />
-      </div>
+    <div className="relative flex h-full min-h-0 w-full flex-1 flex-col bg-bmm-sky text-bmm-brown">
+      <FeedTopChrome category={category} onCategoryChange={setCategory} />
 
       <div
         ref={rootRef}
-        className="h-dvh w-full snap-y snap-mandatory overflow-y-scroll no-scrollbar"
+        className="flex min-h-0 flex-1 flex-col overflow-y-scroll snap-y snap-mandatory no-scrollbar"
       >
         {items.length === 0 ? (
-          <div className="grid h-dvh place-items-center px-6 text-center">
+          <div className="flex min-h-0 flex-[0_0_100%] flex-col items-center justify-center px-6 text-center">
             <div>
               <div className="text-2xl font-bold text-bmm-brown">No items yet</div>
               <div className="mt-2 text-bmm-brown/85">
@@ -127,7 +156,7 @@ export function FeedScroller(props: { highlightId?: string | null }) {
               </div>
               <a
                 href="/create"
-                className="mt-5 inline-flex items-center justify-center border-2 border-bmm-brown bg-bmm-peach px-5 py-3 text-lg font-bold text-bmm-brown shadow-[4px_4px_0_#5c4033] transition hover:brightness-95"
+                className="mt-5 inline-flex items-center justify-center border-2 border-bmm-brown bg-bmm-peach px-5 py-3 text-lg font-bold text-bmm-brown transition hover:brightness-95"
               >
                 Create one
               </a>
@@ -135,11 +164,19 @@ export function FeedScroller(props: { highlightId?: string | null }) {
           </div>
         ) : (
           items.map((it) => (
-            <div key={it.id} data-item-id={it.id} className="h-dvh">
+            <div
+              key={it.id}
+              data-item-id={it.id}
+              className="flex min-h-0 flex-[0_0_100%] snap-start flex-col"
+            >
               <FeedItem
                 item={it}
                 active={activeId === it.id}
-                onAdvance={() => advanceFrom(it.id)}
+                feedAudioOn={feedAudioOn}
+                onUnlockFeedAudio={unlockFeedAudio}
+                mine={mineIds.has(it.id)}
+                deleting={deletingId === it.id}
+                onDeleteMine={deleteMine}
               />
             </div>
           ))
@@ -148,4 +185,3 @@ export function FeedScroller(props: { highlightId?: string | null }) {
     </div>
   );
 }
-
