@@ -90,7 +90,7 @@ async function callText(prompt: string, temperature = 1.0): Promise<Record<strin
   return { __parsed: JSON.parse(raw), __usage: res.usage };
 }
 
-// Orchestrates the four sequential xAI calls that produce a full marketplace listing from one photo.
+// Orchestrates the three sequential xAI calls that produce a full marketplace listing from one photo.
 export async function runPipeline(
   imageBytes: Buffer,
   mime: string,
@@ -103,17 +103,17 @@ export async function runPipeline(
   const s1Start = Date.now();
   const v = await callVision(visionPrompt(sellerBlock), imageBytes, mime);
   const vision = v.__parsed as VisionAttrs;
-  logStep("[1/4] vision", Date.now() - s1Start, v.__usage as any);
+  logStep("[1/3] vision", Date.now() - s1Start, v.__usage as any);
 
   const s2Start = Date.now();
   const w = await callText(writerPrompt(vision as unknown as Record<string, unknown>, sellerBlock));
   const scriptData = w.__parsed as { script: string };
-  logStep("[2/4] writer", Date.now() - s2Start, w.__usage as any);
+  logStep("[2/3] writer", Date.now() - s2Start, w.__usage as any);
 
   const s3Start = Date.now();
   const d = await callText(directorPrompt(vision as unknown as Record<string, unknown>, scriptData), 0.7);
   const videoData = d.__parsed as { videoPrompt: string };
-  logStep("[3/4] director", Date.now() - s3Start, d.__usage as any);
+  logStep("[3/3] director", Date.now() - s3Start, d.__usage as any);
 
   const seller = randomSeller();
   console.log(`  pipeline total              ${`${Date.now() - t0}ms`.padStart(7)}\n`);

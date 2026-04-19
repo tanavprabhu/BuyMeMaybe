@@ -3,9 +3,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { messageFromFailedResponse } from "../lib/client-api-error";
 import { readMyItemIds, removeMyItemId } from "../lib/client-owned-items";
-import { BrandMark } from "./BrandMark";
-import { CategoryPills, type CategoryId } from "./CategoryPills";
+import { FeedTopChrome } from "./feed/FeedTopChrome";
 import { FeedItem, type FeedItemModel } from "./FeedItem";
+import type { CategoryId } from "./CategoryPills";
 
 type FeedResponse = { items: FeedItemModel[]; nextCursor: string | null };
 
@@ -140,19 +140,7 @@ export function FeedScroller(props: { highlightId?: string | null }) {
 
   return (
     <div className="relative flex h-full min-h-0 w-full flex-1 flex-col bg-bmm-sky text-bmm-brown">
-      <div className="pointer-events-auto z-20 shrink-0 border-b-2 border-bmm-brown bg-bmm-cream/95 backdrop-blur-sm">
-        <div className="flex items-center justify-between gap-2 px-3 py-2">
-          <BrandMark />
-          <a
-            href="/create"
-            className="grid h-10 w-10 shrink-0 place-items-center rounded-full border-2 border-bmm-brown bg-bmm-peach text-xl font-bold text-bmm-brown shadow-[3px_3px_0_#5c4033] transition hover:brightness-95"
-            aria-label="Create listing"
-          >
-            ＋
-          </a>
-        </div>
-        <CategoryPills value={category} onChange={setCategory} />
-      </div>
+      <FeedTopChrome category={category} onCategoryChange={setCategory} />
 
       <div
         ref={rootRef}

@@ -39,3 +39,21 @@ body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Content width + safe areas (8px grid: use max(16px, inset) for horizontal gutters). */
+@utility px-screen {
+  padding-left: max(1rem, env(safe-area-inset-left, 0px));
+  padding-right: max(1rem, env(safe-area-inset-right, 0px));
+}
+
+@utility pt-screen {
+  padding-top: max(0.5rem, env(safe-area-inset-top, 0px));
+}
+
+@utility pb-safe {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+}
+
+@utility mb-safe {
+  margin-bottom: env(safe-area-inset-bottom, 0px);
+}
