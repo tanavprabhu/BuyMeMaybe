@@ -117,3 +117,5 @@ BuyMeMaybe/
 - Set **`DATABASE_URL`** on the host to the same PostgreSQL instance for all regions/instances so every user shares one database.
 - Ensure **`XAI_API_KEY`** (and any model overrides) are set in the deployment environment.
 - **File uploads on Vercel:** the filesystem under `/var/task` is read-only, so creating `public/uploads` fails with `ENOENT`. Enable **[Vercel Blob](https://vercel.com/docs/storage/vercel-blob)** for the project (Storage → Blob → connect to the app). Linking the store injects **`BLOB_READ_WRITE_TOKEN`** into production; with that set, the app stores images and MP4s in Blob and saves their `https://…` URLs in the database. Locally, omit the token to keep using `public/uploads` and `public/generated` on disk.
+
+Made with <3 by Nisa, Andrew, and Tanav
