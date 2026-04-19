@@ -1,3 +1,4 @@
+import { missingXaiApiKeyMessage } from "./env-messages";
 import { loadRootEnv } from "./root-env";
 
 export type VideoParams = {
@@ -12,9 +13,7 @@ async function submitJob(params: VideoParams): Promise<string> {
   loadRootEnv();
   const key = process.env.XAI_API_KEY;
   if (!key) {
-    throw new Error(
-      "XAI_API_KEY is missing. Add it to .env or .env.local in the project root, then restart `npm run dev`.",
-    );
+    throw new Error(missingXaiApiKeyMessage());
   }
 
   const refs = (params.referenceImages ?? []).filter((r) => r.bytes.length > 0);
@@ -72,9 +71,7 @@ async function pollUntilDone(requestId: string, pollMs = 5000): Promise<string> 
   loadRootEnv();
   const key = process.env.XAI_API_KEY;
   if (!key) {
-    throw new Error(
-      "XAI_API_KEY is missing. Add it to .env or .env.local in the project root, then restart `npm run dev`.",
-    );
+    throw new Error(missingXaiApiKeyMessage());
   }
   const deadline = Date.now() + 15 * 60_000;
   let last = "";

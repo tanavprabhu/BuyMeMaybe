@@ -4,14 +4,23 @@ import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
+import ffmpegInstaller from "@ffmpeg-installer/ffmpeg";
+import ffprobeInstaller from "@ffprobe-installer/ffprobe";
 import ffmpeg from "fluent-ffmpeg";
 import type { Caption } from "./pipeline";
+
+/** Bundled binaries work on Vercel/serverless where system `ffmpeg`/`ffprobe` are not installed. */
+const ffmpegBin = process.env.FFMPEG_PATH?.trim() || ffmpegInstaller.path;
+const ffprobeBin = process.env.FFPROBE_PATH?.trim() || ffprobeInstaller.path;
+
+ffmpeg.setFfmpegPath(ffmpegBin);
+ffmpeg.setFfprobePath(ffprobeBin);
 
 const execFileAsync = promisify(execFile);
 
 async function ffprobeDurationSeconds(mediaPath: string): Promise<number> {
   const { stdout } = await execFileAsync(
-    "ffprobe",
+    ffprobeBin,
     [
       "-v",
       "error",
@@ -107,7 +116,7 @@ export async function ensureSquare1080(videoBytes: Buffer): Promise<Buffer> {
 async function hasAudioStream(mediaPath: string): Promise<boolean> {
   try {
     const { stdout } = await execFileAsync(
-      "ffprobe",
+      ffprobeBin,
       [
         "-v",
         "error",

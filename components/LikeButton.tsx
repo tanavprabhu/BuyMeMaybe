@@ -2,15 +2,18 @@
 
 import { useState } from "react";
 
+// Renders an optimistic like button that increments likes via POST /api/like.
 export function LikeButton(props: {
   itemId: string;
   initialLikes: number;
+  /** Default: stacked icon + count. Inline keeps count attached for dense rows. */
   layout?: "stack" | "inline";
 }) {
   const [likes, setLikes] = useState(props.initialLikes);
   const [busy, setBusy] = useState(false);
 
   async function onLike() {
+    // Optimistically increments likes and reconciles with the server response.
     if (busy) return;
     setBusy(true);
     setLikes((x) => x + 1);

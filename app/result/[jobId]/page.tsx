@@ -8,7 +8,7 @@ type JobStatus =
   | { status: "pending-analyze" }
   | { status: "ready-to-generate" }
   | { status: "generating" }
-  | { status: "ready"; itemId: string }
+  | { status: "ready"; itemId: string; videoUrl?: string }
   | { status: "error"; message: string };
 
 type StatusResponse = { jobId: string } & JobStatus;
@@ -76,7 +76,11 @@ export default function ResultPage(props: { params: Promise<{ jobId: string }> }
             <div className="relative aspect-square w-full max-w-md mx-auto overflow-hidden rounded-2xl border-2 border-bmm-brown bg-bmm-white">
               <video
                 className="h-full w-full object-cover"
-                src={`/generated/${ready}.mp4`}
+                src={
+                  state.status === "ready" && state.videoUrl
+                    ? state.videoUrl
+                    : `/generated/${ready}.mp4`
+                }
                 playsInline
                 controls
                 autoPlay

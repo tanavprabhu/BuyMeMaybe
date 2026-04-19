@@ -114,6 +114,17 @@ BuyMeMaybe/
 
 ## Production notes
 
-- Set **`DATABASE_URL`** on the host to the same PostgreSQL instance for all regions/instances so every user shares one database.
-- Ensure **`XAI_API_KEY`** (and any model overrides) are set in the deployment environment.
-- **File uploads on Vercel:** the filesystem under `/var/task` is read-only, so creating `public/uploads` fails with `ENOENT`. Enable **[Vercel Blob](https://vercel.com/docs/storage/vercel-blob)** for the project (Storage → Blob → connect to the app). Linking the store injects **`BLOB_READ_WRITE_TOKEN`** into production; with that set, the app stores images and MP4s in Blob and saves their `https://…` URLs in the database. Locally, omit the token to keep using `public/uploads` and `public/generated` on disk.
+Environment variables are **server-only** (Next.js API routes); they are not exposed to the browser. Copy names and values from `.env.example` / `.env.local` into your host’s dashboard.
+
+**Vercel (typical checklist)** — Project → **Settings** → **Environment Variables**. Add each for **Production** (and **Preview** if you use preview deployments), then **Redeploy** so new values apply.
+
+| Variable | Purpose |
+|----------|---------|
+| `DATABASE_URL` | PostgreSQL connection string (Neon, Supabase, etc.). |
+| `XAI_API_KEY` | Required for analyze + video (from [console.x.ai](https://console.x.ai)). If this is missing online, generation fails until you add it and redeploy. |
+| `BLOB_READ_WRITE_TOKEN` | Required on Vercel for uploads/video files (read-only filesystem under `/var/task`). Use a **Public** Blob store; link it so the token is injected. |
+| `XAI_VISION_MODEL`, `XAI_TEXT_MODEL` | Optional overrides (defaults are Grok fast models in `lib/pipeline.ts`). |
+
+**File uploads on Vercel:** without Blob, creating `public/uploads` fails with `ENOENT`. With **[Vercel Blob](https://vercel.com/docs/storage/vercel-blob)** and a public store, images and MP4s get `https://…` URLs in the database. Locally, omit `BLOB_READ_WRITE_TOKEN` to use `public/uploads` and `public/generated` on disk.
+
+**FFmpeg on Vercel:** serverless images do not include system `ffmpeg`/`ffprobe`. This repo uses **`@ffmpeg-installer/ffmpeg`** and **`@ffprobe-installer/ffprobe`** so the Linux binaries ship with the deployment. Optional overrides: `FFMPEG_PATH` / `FFPROBE_PATH` env vars if you supply your own binaries.
