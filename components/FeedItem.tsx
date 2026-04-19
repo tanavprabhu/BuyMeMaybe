@@ -141,11 +141,18 @@ export function FeedItem(props: {
     if (!v) return;
     if (videoActive) {
       v.muted = videoMuted;
+      v.preload = "auto";
       const p = v.play();
       if (p !== undefined) void p.catch(() => {});
     } else {
       v.pause();
       v.muted = true;
+      v.preload = "metadata";
+      try {
+        v.currentTime = 0;
+      } catch {
+        /* seek may reject before metadata */
+      }
     }
   }, [videoActive, videoMuted, props.item.videoUrl]);
 
@@ -162,15 +169,17 @@ export function FeedItem(props: {
                 <div className={CAROUSEL_SLIDE}>
                   <div className={`${mediaSquareClass} bg-black`}>
                       <video
+                        key={props.item.videoUrl}
                         ref={videoRef}
                         className="pointer-events-none absolute inset-0 h-full w-full object-cover object-center"
                         src={props.item.videoUrl}
+                        poster={props.item.imageUrl}
                         playsInline
                         loop
                         muted={videoMuted}
                         autoPlay={videoActive}
                         controls={false}
-                        preload="auto"
+                        preload={videoActive ? "auto" : "metadata"}
                       />
                       {videoActive && !props.feedAudioOn ? (
                         <button
