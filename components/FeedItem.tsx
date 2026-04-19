@@ -139,21 +139,31 @@ export function FeedItem(props: {
   useEffect(() => {
     const v = videoRef.current;
     if (!v) return;
-    if (videoActive) {
-      v.muted = videoMuted;
-      v.preload = "auto";
-      const p = v.play();
-      if (p !== undefined) void p.catch(() => {});
-    } else {
+
+    if (!videoActive) {
       v.pause();
       v.muted = true;
-      v.preload = "metadata";
-      try {
-        v.currentTime = 0;
-      } catch {
-        /* seek may reject before metadata */
-      }
+      return;
     }
+
+    v.muted = videoMuted;
+
+    const tryPlay = () => {
+      const p = v.play();
+      if (p !== undefined) void p.catch(() => {});
+    };
+
+    if (v.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA) {
+      tryPlay();
+      return;
+    }
+
+    const onLoaded = () => {
+      v.removeEventListener("loadeddata", onLoaded);
+      tryPlay();
+    };
+    v.addEventListener("loadeddata", onLoaded);
+    return () => v.removeEventListener("loadeddata", onLoaded);
   }, [videoActive, videoMuted, props.item.videoUrl]);
 
   return (
@@ -169,7 +179,6 @@ export function FeedItem(props: {
                 <div className={CAROUSEL_SLIDE}>
                   <div className={`${mediaSquareClass} bg-black`}>
                       <video
-                        key={props.item.videoUrl}
                         ref={videoRef}
                         className="pointer-events-none absolute inset-0 h-full w-full object-cover object-center"
                         src={props.item.videoUrl}
@@ -179,7 +188,7 @@ export function FeedItem(props: {
                         muted={videoMuted}
                         autoPlay={videoActive}
                         controls={false}
-                        preload={videoActive ? "auto" : "metadata"}
+                        preload="auto"
                       />
                       {videoActive && !props.feedAudioOn ? (
                         <button
