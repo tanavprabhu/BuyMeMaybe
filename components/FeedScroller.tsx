@@ -148,15 +148,15 @@ export function FeedScroller(props: { highlightId?: string | null }) {
         className="flex min-h-0 flex-1 flex-col overflow-y-scroll snap-y snap-mandatory no-scrollbar"
       >
         {items.length === 0 ? (
-          <div className="flex min-h-0 flex-[0_0_100%] flex-col items-center justify-center px-6 text-center">
-            <div>
+          <div className="flex min-h-0 flex-[0_0_100%] flex-col items-center justify-start px-6 pb-12 pt-16 text-center sm:pt-20">
+            <div className="flex w-full max-w-sm flex-col items-center gap-4">
               <div className="text-2xl font-bold text-bmm-brown">No items yet</div>
-              <div className="mt-2 text-bmm-brown/85">
+              <p className="text-sm leading-relaxed text-bmm-brown/85">
                 Tap + to generate the first talking listing.
-              </div>
+              </p>
               <a
                 href="/create"
-                className="mt-5 inline-flex items-center justify-center border-2 border-bmm-brown bg-bmm-peach px-5 py-3 text-lg font-bold text-bmm-brown transition hover:brightness-95"
+                className="inline-flex items-center justify-center border-2 border-bmm-brown bg-bmm-peach px-5 py-3 text-lg font-bold text-bmm-brown transition hover:brightness-95"
               >
                 Create one
               </a>
