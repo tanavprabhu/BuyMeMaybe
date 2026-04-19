@@ -1,6 +1,9 @@
+-- CreateSchema
+CREATE SCHEMA IF NOT EXISTS "public";
+
 -- CreateTable
 CREATE TABLE "Item" (
-    "id" TEXT NOT NULL PRIMARY KEY,
+    "id" TEXT NOT NULL,
     "itemName" TEXT NOT NULL,
     "category" TEXT NOT NULL,
     "script" TEXT NOT NULL,
@@ -11,9 +14,15 @@ CREATE TABLE "Item" (
     "urgencyDays" INTEGER NOT NULL,
     "sellerName" TEXT NOT NULL,
     "sellerLocation" TEXT NOT NULL,
+    "listingLine1" TEXT,
+    "listingLine2" TEXT,
+    "listingExtra" TEXT,
+    "sellerCategoryKey" TEXT,
     "likes" INTEGER NOT NULL DEFAULT 0,
     "captions" TEXT NOT NULL,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "Item_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex

@@ -153,7 +153,7 @@ export function FeedItem(props: {
     <section className="flex h-full min-h-0 w-full snap-start snap-always flex-col overflow-hidden bg-bmm-sky text-bmm-brown">
       <div className="flex min-h-0 flex-1 flex-col">
         <div className="shrink-0 w-full pt-3">
-          <div className="mx-auto w-full max-w-full px-2 min-[420px]:px-3 sm:px-4">
+          <div className="mx-auto w-full max-w-full px-screen">
             <div className="relative min-w-0 w-full">
               <div
                 ref={carouselRef}

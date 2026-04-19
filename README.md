@@ -15,7 +15,7 @@ AI-generated **square video listings**: snap a photo, add a few details, and the
 2. **Pipeline** — Vision + writer + director prompts (xAI) → Grok Imagine **10s, 1:1** video with on-model VO.
 3. **Feed** — Vertical snap scroll, category filters, likes, highlight links, delete for “your” listings (local marker).
 
-Stack: **Next.js 16** (App Router), **React 19**, **Tailwind 4**, **Prisma + SQLite**, **xAI** (chat/vision + Grok Imagine), **FFmpeg** (square export / optional mux).
+Stack: **Next.js 16** (App Router), **React 19**, **Tailwind 4**, **Prisma + PostgreSQL**, **xAI** (chat/vision + Grok Imagine), **FFmpeg** (square export / optional mux).
 
 ---
 
@@ -31,15 +31,30 @@ npm install
 
 Copy `.env.example` to `.env.local` and set at least:
 
+- `DATABASE_URL` — **PostgreSQL** connection string (hosted or local). Examples: [Neon](https://neon.tech), [Supabase](https://supabase.com) (Database → URI), or Docker below.
 - `XAI_API_KEY` — xAI console
-- `DATABASE_URL` — default `file:./dev.db` is fine locally
 
 ### Database
+
+You need a running Postgres instance whose URL matches `DATABASE_URL`.
+
+**Local Postgres (Docker)**
+
+```bash
+docker run --name bmm-pg -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=buymemaybe -p 5432:5432 -d postgres:16
+```
+
+Then set `DATABASE_URL="postgresql://postgres:postgres@localhost:5432/buymemaybe?schema=public"` in `.env.local`.
+
+Apply the schema:
 
 ```bash
 npx prisma migrate deploy
 npx prisma generate
 ```
+
+**Hosted (Neon, Supabase, RDS, …)**  
+Create a project, copy the **pooled** or **direct** `postgresql://…` URL (include `?sslmode=require` if the provider says so), put it in `.env.local` and in your host’s environment (Vercel, etc.), then run `npx prisma migrate deploy` from CI or once locally against that URL.
 
 ### Dev server
 
@@ -99,6 +114,6 @@ BuyMeMaybe/
 
 ## Production notes
 
-- Point `DATABASE_URL` at your hosted DB if not using file SQLite.
-- Ensure `XAI_API_KEY` (and any model overrides) are set in the deployment environment.
-- Static assets under `public/generated` and `public/uploads` must persist on disk (or move to object storage in a future iteration).
+- Set **`DATABASE_URL`** on the host to the same PostgreSQL instance for all regions/instances so every user shares one database.
+- Ensure **`XAI_API_KEY`** (and any model overrides) are set in the deployment environment.
+- Static assets under `public/generated` and `public/uploads` must persist on disk (server with a volume) or move to **object storage** so uploads and videos survive serverless/ephemeral filesystems.
