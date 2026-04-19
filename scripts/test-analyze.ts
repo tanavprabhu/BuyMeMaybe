@@ -14,22 +14,30 @@ function resolveImagePath(): string {
     [".jpg", ".jpeg", ".png", ".webp"].includes(extname(f).toLowerCase()),
   );
   if (candidates.length === 0) {
-    throw new Error("No image passed and seed-photos/ is empty. Usage: npx tsx scripts/test-analyze.ts <path-to-image>");
+    throw new Error(
+      "No image passed and seed-photos/ is empty. Usage: npx tsx scripts/test-analyze.ts <path> [more paths…]",
+    );
   }
-  return join("seed-photos", candidates[0]);
+  return join("seed-photos", candidates[0]!);
 }
 
-// Runs analyzeItem on a local image and pretty-prints the result.
-async function main() {
-  const imagePath = resolveImagePath();
+function mimeForPath(imagePath: string): string {
   const ext = extname(imagePath).toLowerCase();
-  const mime =
-    ext === ".png" ? "image/png" :
-    ext === ".webp" ? "image/webp" :
-    "image/jpeg";
-  console.log(`\n→ Analyzing ${imagePath} (${mime})\n`);
-  const bytes = readFileSync(imagePath);
-  const result = await analyzeItem(bytes, mime);
+  if (ext === ".png") return "image/png";
+  if (ext === ".webp") return "image/webp";
+  return "image/jpeg";
+}
+
+// Runs analyzeItem on one or more local images and pretty-prints the result.
+async function main() {
+  const args = process.argv.slice(2).filter(Boolean);
+  const paths = args.length > 0 ? args : [resolveImagePath()];
+  console.log(`\n→ Analyzing ${paths.length} image(s)\n`);
+  const images = paths.map((imagePath) => ({
+    bytes: readFileSync(imagePath),
+    mimeType: mimeForPath(imagePath),
+  }));
+  const result = await analyzeItem(images);
   console.log(JSON.stringify(result, null, 2));
 }
 

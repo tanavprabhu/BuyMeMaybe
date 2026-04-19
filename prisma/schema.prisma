@@ -19,6 +19,14 @@ model Item {
   urgencyDays    Int
   sellerName     String
   sellerLocation String
+  /// Create form: brand · category (optional)
+  listingLine1   String?
+  /// Create form: size · condition (optional)
+  listingLine2   String?
+  /// Create form: extra notes (optional)
+  listingExtra   String?
+  /// Create form: clothing | kitchen | electronics | decor | books | random
+  sellerCategoryKey String?
   likes          Int      @default(0)
   captions       String
   createdAt      DateTime @default(now())

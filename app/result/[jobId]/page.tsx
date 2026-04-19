@@ -70,14 +70,14 @@ export default function ResultPage(props: { params: Promise<{ jobId: string }> }
             <div className="mt-2 text-sm text-bmm-brown/90">{state.message}</div>
             <a
               href="/create"
-              className="mt-4 inline-flex rounded-full border-2 border-bmm-brown bg-bmm-peach px-4 py-2 text-sm font-bold text-bmm-brown shadow-[3px_3px_0_#5c4033]"
+              className="mt-4 inline-flex rounded-full border-2 border-bmm-brown bg-bmm-peach px-4 py-2 text-sm font-bold text-bmm-brown"
             >
               try again
             </a>
           </div>
         ) : ready ? (
           <div className="mt-6 flex flex-1 flex-col">
-            <div className="relative aspect-square w-full max-w-md mx-auto overflow-hidden rounded-2xl border-2 border-bmm-brown bg-bmm-white shadow-[4px_4px_0_#5c4033]">
+            <div className="relative aspect-square w-full max-w-md mx-auto overflow-hidden rounded-2xl border-2 border-bmm-brown bg-bmm-white">
               <video
                 className="h-full w-full object-cover"
                 src={`/generated/${ready}.mp4`}
@@ -93,7 +93,7 @@ export default function ResultPage(props: { params: Promise<{ jobId: string }> }
               </div>
               <a
                 href={`/?highlight=${encodeURIComponent(ready)}`}
-                className="mt-5 inline-flex w-full items-center justify-center rounded-full border-2 border-bmm-brown bg-bmm-peach px-5 py-4 text-base font-bold text-bmm-brown shadow-[4px_4px_0_#5c4033] transition hover:brightness-95"
+                className="mt-5 inline-flex w-full items-center justify-center rounded-full border-2 border-bmm-brown bg-bmm-peach px-5 py-4 text-base font-bold text-bmm-brown transition hover:brightness-95"
               >
                 view in feed
               </a>

@@ -4,6 +4,8 @@ export type SellerListingSpecs = {
   detailLine: string;
   extra: string;
   askingPriceInput: string;
+  /** Create form department (clothing, kitchen, …) — drives field labels in the feed. */
+  sellerCategoryKey?: string;
 };
 
 // Returns true when any spec field has non-whitespace content.
@@ -20,8 +22,11 @@ export function hasSellerSpecs(s: SellerListingSpecs): boolean {
 export function sellerSpecsPromptBlock(s: SellerListingSpecs): string | null {
   if (!hasSellerSpecs(s)) return null;
   const lines: string[] = [];
-  if (s.titleLine.trim()) lines.push(`Listing line 1 (e.g. brand · category): ${s.titleLine.trim()}`);
-  if (s.detailLine.trim()) lines.push(`Listing line 2 (e.g. size · condition): ${s.detailLine.trim()}`);
+  if (s.sellerCategoryKey?.trim()) {
+    lines.push(`Seller listing department: ${s.sellerCategoryKey.trim()}`);
+  }
+  if (s.titleLine.trim()) lines.push(`Listing line 1 (structured facts): ${s.titleLine.trim()}`);
+  if (s.detailLine.trim()) lines.push(`Listing line 2 (structured facts): ${s.detailLine.trim()}`);
   if (s.extra.trim()) lines.push(`Extra facts for the voiceover (brand, size, price, care, etc.): ${s.extra.trim()}`);
   if (s.askingPriceInput.trim()) lines.push(`Asking price (seller intent): ${s.askingPriceInput.trim()}`);
   return lines.join("\n");

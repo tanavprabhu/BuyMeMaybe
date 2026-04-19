@@ -29,7 +29,7 @@ export function CategoryPills(props: {
             className={[
               "shrink-0 rounded-full border-2 border-bmm-brown px-4 py-2 text-xs font-extrabold uppercase tracking-wide transition",
               active
-                ? "bg-bmm-brown text-bmm-cream shadow-[2px_2px_0_#3f2b22]"
+                ? "bg-bmm-brown text-bmm-cream"
                 : "bg-bmm-peach/80 text-bmm-brown hover:bg-bmm-peach",
             ].join(" ")}
           >

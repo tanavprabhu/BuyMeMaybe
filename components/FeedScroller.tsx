@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { messageFromFailedResponse } from "../lib/client-api-error";
 import { readMyItemIds, removeMyItemId } from "../lib/client-owned-items";
 import { FeedTopChrome } from "./feed/FeedTopChrome";
@@ -17,7 +17,11 @@ export function FeedScroller(props: { highlightId?: string | null }) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [mineIds, setMineIds] = useState<Set<string>>(new Set());
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  /** After one tap, feed videos may play with sound (browser autoplay rules). */
+  const [feedAudioOn, setFeedAudioOn] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const activeIdRef = useRef<string | null>(null);
+  activeIdRef.current = activeId;
 
   const highlight = props.highlightId ?? null;
 
@@ -32,7 +36,7 @@ export function FeedScroller(props: { highlightId?: string | null }) {
     setActiveId(json.items?.[0]?.id ?? null);
   }
 
-  async function loadMore() {
+  const loadMore = useCallback(async () => {
     // Fetches the next page for the current category and appends to the feed.
     if (!cursor) return;
     const res = await fetch(
@@ -41,11 +45,28 @@ export function FeedScroller(props: { highlightId?: string | null }) {
     const json = (await res.json()) as FeedResponse;
     setItems((prev) => [...prev, ...(json.items ?? [])]);
     setCursor(json.nextCursor ?? null);
-  }
+  }, [cursor, category]);
 
   useEffect(() => {
     // Loads locally-owned listing ids for delete controls.
     setMineIds(readMyItemIds());
+  }, []);
+
+  useEffect(() => {
+    try {
+      if (sessionStorage.getItem("bmm-feed-audio") === "1") setFeedAudioOn(true);
+    } catch {
+      /* private mode */
+    }
+  }, []);
+
+  const unlockFeedAudio = useCallback(() => {
+    setFeedAudioOn(true);
+    try {
+      sessionStorage.setItem("bmm-feed-audio", "1");
+    } catch {
+      /* ignore */
+    }
   }, []);
 
   useEffect(() => {
@@ -77,15 +98,16 @@ export function FeedScroller(props: { highlightId?: string | null }) {
         if (!id) continue;
         if (!best || d < best.dist) best = { id, dist: d };
       }
-      if (best && best.id !== activeId) setActiveId(best.id);
+      if (best && best.id !== activeIdRef.current) setActiveId(best.id);
 
       const nearEnd = root.scrollTop + root.clientHeight >= root.scrollHeight - root.clientHeight * 1.5;
       if (nearEnd) void loadMore();
     };
 
     root.addEventListener("scroll", onScroll, { passive: true });
+    onScroll();
     return () => root.removeEventListener("scroll", onScroll);
-  }, [activeId, cursor, category]);
+  }, [loadMore, items]);
 
   useEffect(() => {
     // Scrolls the feed to a highlighted item id (used after creation).
@@ -95,17 +117,6 @@ export function FeedScroller(props: { highlightId?: string | null }) {
     const target = root.querySelector<HTMLElement>(`[data-item-id="${CSS.escape(highlight)}"]`);
     if (target) target.scrollIntoView({ block: "start" });
   }, [highlight, items]);
-
-  function advanceFrom(id: string) {
-    // Scrolls to the next feed item, wrapping to the first when at the end.
-    const root = rootRef.current;
-    if (!root) return;
-    const sections = Array.from(root.querySelectorAll<HTMLElement>("[data-item-id]"));
-    const idx = sections.findIndex((s) => s.dataset.itemId === id);
-    if (idx < 0) return;
-    const next = sections[idx + 1] ?? sections[0];
-    next?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
 
   async function deleteMine(id: string) {
     // Deletes a locally-owned listing from DB and removes it from feed state.
@@ -155,7 +166,7 @@ export function FeedScroller(props: { highlightId?: string | null }) {
               </div>
               <a
                 href="/create"
-                className="mt-5 inline-flex items-center justify-center border-2 border-bmm-brown bg-bmm-peach px-5 py-3 text-lg font-bold text-bmm-brown shadow-[4px_4px_0_#5c4033] transition hover:brightness-95"
+                className="mt-5 inline-flex items-center justify-center border-2 border-bmm-brown bg-bmm-peach px-5 py-3 text-lg font-bold text-bmm-brown transition hover:brightness-95"
               >
                 Create one
               </a>
@@ -171,7 +182,8 @@ export function FeedScroller(props: { highlightId?: string | null }) {
               <FeedItem
                 item={it}
                 active={activeId === it.id}
-                onAdvance={() => advanceFrom(it.id)}
+                feedAudioOn={feedAudioOn}
+                onUnlockFeedAudio={unlockFeedAudio}
                 mine={mineIds.has(it.id)}
                 deleting={deletingId === it.id}
                 onDeleteMine={deleteMine}

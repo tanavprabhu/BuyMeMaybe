@@ -20,7 +20,7 @@ export function PhoneShell(props: { children: React.ReactNode }) {
         />
 
         {/* Dynamic Island */}
-        <div className="hidden shrink-0 justify-center pt-3 md:flex">
+        <div className="hidden shrink-0 justify-center pt-1.5 md:flex">
           <div className="h-7 w-[112px] rounded-full bg-black shadow-inner" />
         </div>
 

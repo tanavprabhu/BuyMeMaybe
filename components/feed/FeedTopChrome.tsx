@@ -8,14 +8,17 @@ export function FeedTopChrome(props: {
 }) {
   return (
     <header className="shrink-0 border-b-2 border-bmm-brown bg-bmm-cream/95 backdrop-blur-sm pt-screen">
-      <div className="flex items-center justify-between gap-3 px-screen pb-2 pt-1">
-        <BrandMark size={36} className="min-w-0" wordmarkClassName="text-[1.02rem] leading-none" />
+      <div className="flex items-center justify-between gap-2 px-screen pb-2 pt-1">
+        <BrandMark size={36} className="min-w-0 flex-1" wordmarkClassName="text-[1.02rem] leading-none" />
         <a
           href="/create"
-          className="grid h-11 w-11 shrink-0 place-items-center rounded-full border-2 border-bmm-brown bg-bmm-peach text-[1.35rem] font-bold leading-none text-bmm-brown shadow-[3px_3px_0_#5c4033] transition hover:brightness-95 active:translate-x-[1px] active:translate-y-[1px] active:shadow-[2px_2px_0_#5c4033]"
-          aria-label="Create listing"
+          className="inline-flex min-w-[9.5rem] shrink-0 items-center justify-center gap-2 rounded-full border-2 border-bmm-brown bg-bmm-peach px-4 py-1.5 text-[0.78rem] font-extrabold leading-tight tracking-wide text-bmm-brown min-[380px]:min-w-[10.5rem] min-[380px]:px-5 min-[380px]:py-2 min-[380px]:text-sm sm:min-w-[11.5rem] sm:px-6 sm:text-[0.95rem] sm:tracking-[0.08em] transition hover:brightness-95 active:brightness-95"
+          aria-label="Create new listing"
         >
-          ＋
+          <span aria-hidden className="text-base font-black leading-none min-[380px]:text-lg">
+            +
+          </span>
+          <span className="whitespace-nowrap">New Listing</span>
         </a>
       </div>
       <CategoryPills value={props.category} onChange={props.onCategoryChange} />

@@ -1,9 +1,32 @@
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { randomUUID } from "node:crypto";
 import ffmpeg from "fluent-ffmpeg";
 import type { Caption } from "./pipeline";
+
+const execFileAsync = promisify(execFile);
+
+// Reads container duration in seconds via ffprobe (same binary bundle as ffmpeg).
+async function ffprobeDurationSeconds(mediaPath: string): Promise<number> {
+  const { stdout } = await execFileAsync(
+    "ffprobe",
+    [
+      "-v",
+      "error",
+      "-show_entries",
+      "format=duration",
+      "-of",
+      "default=noprint_wrappers=1:nokey=1",
+      mediaPath,
+    ],
+    { maxBuffer: 1024 * 1024 },
+  );
+  const v = parseFloat(String(stdout).trim());
+  return Number.isFinite(v) && v > 0 ? v : 0;
+}
 
 type TempPaths = { workDir: string; paths: string[] };
 
@@ -61,7 +84,7 @@ function runFfmpeg(cmd: ffmpeg.FfmpegCommand): Promise<void> {
   });
 }
 
-// Ensures the input video is 1:1 square at 1080×1080, scaling and padding as needed.
+// Ensures the input video is 1:1 square at 1080×1080 — center-crop only (no stretch, no letterbox padding).
 export async function ensureSquare1080(videoBytes: Buffer): Promise<Buffer> {
   const ws = createTempWorkspace();
   try {
@@ -70,16 +93,13 @@ export async function ensureSquare1080(videoBytes: Buffer): Promise<Buffer> {
     ws.paths.push(outPath);
 
     const vf =
-      "scale=1080:1080:force_original_aspect_ratio=decrease," +
-      "pad=1080:1080:(ow-iw)/2:(oh-ih)/2:color=black";
+      "scale=1080:1080:force_original_aspect_ratio=increase," +
+      "crop=1080:1080:(iw-ow)/2:(ih-oh)/2";
 
+    // Avoid forcing -r 30: that can duplicate/drop frames vs Grok’s source and skew A/V after mux.
     await runFfmpeg(
       ffmpeg(inPath)
-        .outputOptions([
-          "-movflags +faststart",
-          "-pix_fmt yuv420p",
-          "-r 30",
-        ])
+        .outputOptions(["-movflags +faststart", "-pix_fmt yuv420p"])
         .videoFilters(vf)
         .noAudio()
         .output(outPath),
@@ -91,25 +111,66 @@ export async function ensureSquare1080(videoBytes: Buffer): Promise<Buffer> {
   }
 }
 
-// Muxes an mp3 voiceover onto a silent mp4, transcoding audio to AAC for web playback.
-export async function muxVoiceover(videoBytes: Buffer, mp3Bytes: Buffer): Promise<Buffer> {
+async function hasAudioStream(mediaPath: string): Promise<boolean> {
+  try {
+    const { stdout } = await execFileAsync(
+      "ffprobe",
+      [
+        "-v",
+        "error",
+        "-select_streams",
+        "a",
+        "-show_entries",
+        "stream=index",
+        "-of",
+        "csv=p=0",
+        mediaPath,
+      ],
+      { maxBuffer: 64 * 1024 },
+    );
+    return stdout.trim().length > 0;
+  } catch {
+    return false;
+  }
+}
+
+// Same 1080×1080 square as `ensureSquare1080`, but keeps the source audio (e.g. Grok Imagine narration) as AAC.
+export async function ensureSquare1080KeepNativeAudio(videoBytes: Buffer): Promise<Buffer> {
   const ws = createTempWorkspace();
   try {
-    const videoPath = writeTempFile(ws, "video.mp4", videoBytes);
-    const audioPath = writeTempFile(ws, "audio.mp3", mp3Bytes);
-    const outPath = join(ws.workDir, "muxed.mp4");
+    const inPath = writeTempFile(ws, "in.mp4", videoBytes);
+    const outPath = join(ws.workDir, "square-audio.mp4");
     ws.paths.push(outPath);
 
+    const vf =
+      "scale=1080:1080:force_original_aspect_ratio=increase," +
+      "crop=1080:1080:(iw-ow)/2:(ih-oh)/2";
+
+    if (!(await hasAudioStream(inPath))) {
+      console.warn("  [ffmpeg] Grok mp4 has no audio stream; exporting silent square video");
+      return ensureSquare1080(videoBytes);
+    }
+
     await runFfmpeg(
-      ffmpeg()
-        .input(videoPath)
-        .input(audioPath)
+      ffmpeg(inPath)
+        .videoFilters(vf)
         .outputOptions([
-          "-c:v copy",
-          "-c:a aac",
-          "-b:a 192k",
-          "-shortest",
-          "-movflags +faststart",
+          "-movflags",
+          "+faststart",
+          "-pix_fmt",
+          "yuv420p",
+          "-map",
+          "0:v:0",
+          "-map",
+          "0:a:0",
+          "-c:v",
+          "libx264",
+          "-preset",
+          "veryfast",
+          "-c:a",
+          "aac",
+          "-b:a",
+          "192k",
         ])
         .output(outPath),
     );
@@ -120,12 +181,66 @@ export async function muxVoiceover(videoBytes: Buffer, mp3Bytes: Buffer): Promis
   }
 }
 
-// Produces a final 1:1 square mp4 by normalizing aspect and muxing voiceover (no burned-in captions).
+// Muxes an mp3 voiceover onto an mp4: audio is trimmed/padded to match the **video** duration exactly.
+// (ElevenLabs length ≠ Grok length; `-shortest` was cutting whichever stream was shorter and felt “out of sync”.)
+export async function muxVoiceover(videoBytes: Buffer, mp3Bytes: Buffer): Promise<Buffer> {
+  const ws = createTempWorkspace();
+  try {
+    const videoPath = writeTempFile(ws, "video.mp4", videoBytes);
+    const audioPath = writeTempFile(ws, "audio.mp3", mp3Bytes);
+    const outPath = join(ws.workDir, "muxed.mp4");
+    ws.paths.push(outPath);
+
+    let videoSec = await ffprobeDurationSeconds(videoPath);
+    if (!(videoSec > 0)) {
+      videoSec = 0.1;
+    }
+    const durStr = videoSec.toFixed(6);
+    const audioSec = await ffprobeDurationSeconds(audioPath);
+    console.log(
+      `  [ffmpeg] mux voice: video ${videoSec.toFixed(2)}s, voice ${audioSec.toFixed(2)}s → align audio to video`,
+    );
+
+    const audioFilter = `[1:a]atrim=start=0:duration=${durStr},aresample=48000:first_pts=0,apad=whole_dur=${durStr}[aout]`;
+
+    await runFfmpeg(
+      ffmpeg()
+        .input(videoPath)
+        .input(audioPath)
+        .complexFilter(audioFilter)
+        .outputOptions([
+          "-map",
+          "0:v:0",
+          "-map",
+          "[aout]",
+          "-c:v",
+          "copy",
+          "-c:a",
+          "aac",
+          "-b:a",
+          "192k",
+          "-movflags",
+          "+faststart",
+        ])
+        .output(outPath),
+    );
+
+    return readFileSync(outPath);
+  } finally {
+    rmSync(ws.workDir, { recursive: true, force: true });
+  }
+}
+
+// Final 1:1 square mp4. Default: keep Grok Imagine’s native audio. Pass `voiceMp3` to replace with ElevenLabs (legacy).
 export async function makeFinalVideo(params: {
   rawVideoMp4: Buffer;
-  voiceMp3: Buffer;
+  voiceMp3?: Buffer | null;
 }): Promise<Buffer> {
-  const square = await ensureSquare1080(params.rawVideoMp4);
-  return muxVoiceover(square, params.voiceMp3);
+  const mp3 = params.voiceMp3;
+  if (mp3 != null && mp3.length > 0) {
+    const square = await ensureSquare1080(params.rawVideoMp4);
+    return muxVoiceover(square, mp3);
+  }
+  return ensureSquare1080KeepNativeAudio(params.rawVideoMp4);
 }
 

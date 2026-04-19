@@ -1,17 +1,38 @@
 import { randomUUID } from "node:crypto";
 import type { ItemAnalysis } from "./gemini";
+import type { SellerListingSpecs } from "./seller-specs";
+
+export type JobListingImage = { url: string; mimeType: string; bytes: Buffer };
 
 export type JobState =
   | { status: "pending-analyze" }
-  | { status: "ready-to-generate"; analysis: ItemAnalysis; imageUrl: string; mimeType: string; imageBytes: Buffer }
-  | { status: "generating"; analysis: ItemAnalysis; imageUrl: string; mimeType: string; imageBytes: Buffer; startedAt: number }
+  | {
+      status: "ready-to-generate";
+      analysis: ItemAnalysis;
+      images: JobListingImage[];
+      sellerListing: SellerListingSpecs;
+    }
+  | {
+      status: "generating";
+      analysis: ItemAnalysis;
+      images: JobListingImage[];
+      sellerListing: SellerListingSpecs;
+      startedAt: number;
+    }
   | { status: "ready"; itemId: string }
   | { status: "error"; message: string };
 
 type InternalJob = { id: string; createdAt: number; state: JobState };
 
-const jobs = new Map<string, InternalJob>();
 const JOB_TTL_MS = 60 * 60_000;
+
+// Persist the store on `globalThis` so Turbopack/HMR or route-module reloads do not
+// wipe in-memory jobs between `/api/analyze` and `/api/generate` in dev.
+const globalJobs = globalThis as unknown as { __bmmJobStore?: Map<string, InternalJob> };
+if (!globalJobs.__bmmJobStore) {
+  globalJobs.__bmmJobStore = new Map<string, InternalJob>();
+}
+const jobs = globalJobs.__bmmJobStore;
 
 // Creates a new job id and registers it as pending analysis.
 export function createJob(): string {

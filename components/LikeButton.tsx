@@ -39,18 +39,20 @@ export function LikeButton(props: {
       <button
         type="button"
         onClick={onLike}
-        className="flex items-center gap-2 select-none"
+        className="flex h-11 items-center gap-2 select-none"
         aria-label="Like"
       >
+        <span className="min-w-[1.25rem] text-left text-sm font-extrabold tabular-nums leading-none text-bmm-brown">
+          {likes}
+        </span>
         <div
           className={[
-            "grid h-10 w-10 place-items-center rounded-full border-2 border-bmm-brown bg-bmm-cream shadow-sm",
+            "grid h-11 w-11 shrink-0 place-items-center rounded-full border-2 border-bmm-brown bg-bmm-cream shadow-sm",
             busy ? "opacity-70" : "hover:bg-bmm-peach",
           ].join(" ")}
         >
-          <span className="text-lg leading-none text-bmm-brown">♡</span>
+          <span className="text-xl leading-none text-bmm-brown">♡</span>
         </div>
-        <span className="min-w-[1.25rem] text-right text-sm font-extrabold tabular-nums text-bmm-brown">{likes}</span>
       </button>
     );
   }
@@ -62,6 +64,9 @@ export function LikeButton(props: {
       className="flex flex-col items-center gap-1 select-none"
       aria-label="Like"
     >
+      <div className="text-xs font-semibold text-bmm-brown tabular-nums">
+        {likes}
+      </div>
       <div
         className={[
           "grid h-11 w-11 place-items-center rounded-full border-2 border-bmm-brown bg-bmm-cream",
@@ -69,9 +74,6 @@ export function LikeButton(props: {
         ].join(" ")}
       >
         <span className="text-xl leading-none text-bmm-brown">♡</span>
-      </div>
-      <div className="text-xs font-semibold text-bmm-brown tabular-nums">
-        {likes}
       </div>
     </button>
   );

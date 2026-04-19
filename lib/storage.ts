@@ -11,10 +11,17 @@ export function ensurePublicDirs(): void {
 }
 
 // Writes an uploaded image to public/uploads and returns the public URL path.
-export function writeUpload(params: { id: string; bytes: Buffer; ext: "jpg" | "png" | "webp" }): string {
+// Use index 0 (default) for the primary `{id}.ext`; index 1+ writes `{id}-{index}.ext` for extra angles.
+export function writeUpload(params: {
+  id: string;
+  bytes: Buffer;
+  ext: "jpg" | "png" | "webp";
+  index?: number;
+}): string {
   ensurePublicDirs();
-  const rel = `/uploads/${params.id}.${params.ext}`;
-  const abs = join(ROOT, "public", "uploads", `${params.id}.${params.ext}`);
+  const suffix = params.index && params.index > 0 ? `-${params.index}` : "";
+  const rel = `/uploads/${params.id}${suffix}.${params.ext}`;
+  const abs = join(ROOT, "public", "uploads", `${params.id}${suffix}.${params.ext}`);
   writeFileSync(abs, params.bytes);
   return rel;
 }
