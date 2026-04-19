@@ -39,7 +39,7 @@ async function runGeneration(jobId: string): Promise<void> {
 
     const finalVideo = await makeFinalVideo({ rawVideoMp4: rawVideo });
 
-    const videoUrl = writeGeneratedVideo({ id: jobId, bytes: finalVideo });
+    const videoUrl = await writeGeneratedVideo({ id: jobId, bytes: finalVideo });
     const imageUrl = primary.url;
 
     await prisma.item.create({

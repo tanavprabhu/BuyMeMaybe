@@ -59,7 +59,7 @@ export async function POST(req: Request) {
       const file = files[i]!;
       const mime = file.type || "image/jpeg";
       const bytes = Buffer.from(await file.arrayBuffer());
-      const url = writeUpload({ id: jobId, bytes, ext: mimeToExt(mime), index: i });
+      const url = await writeUpload({ id: jobId, bytes, ext: mimeToExt(mime), index: i });
       images.push({ url, mimeType: mime, bytes });
     }
 

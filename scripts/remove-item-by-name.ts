@@ -1,25 +1,11 @@
-import { existsSync, unlinkSync } from "node:fs";
-import { resolve } from "node:path";
 import { config } from "dotenv";
 import { PrismaClient } from "@prisma/client";
+import { deleteStoredAsset } from "../lib/storage";
 
 config({ path: ".env" });
 config({ path: ".env.local", override: true });
 
 const prisma = new PrismaClient();
-
-function safeDeletePublicPath(publicUrl: string | null | undefined): void {
-  if (!publicUrl || !publicUrl.startsWith("/")) return;
-  const publicRoot = resolve(process.cwd(), "public");
-  const abs = resolve(publicRoot, `.${publicUrl}`);
-  if (!abs.startsWith(publicRoot)) return;
-  if (!existsSync(abs)) return;
-  try {
-    unlinkSync(abs);
-  } catch {
-    /* ignore */
-  }
-}
 
 async function main() {
   const needle = process.argv.slice(2).join(" ").trim();
@@ -46,8 +32,8 @@ async function main() {
   }
 
   for (const item of matches) {
-    safeDeletePublicPath(item.videoUrl);
-    safeDeletePublicPath(item.imageUrl);
+    await deleteStoredAsset(item.videoUrl);
+    await deleteStoredAsset(item.imageUrl);
     await prisma.item.delete({ where: { id: item.id } });
   }
   console.log("Done.");

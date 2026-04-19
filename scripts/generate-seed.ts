@@ -25,7 +25,7 @@ async function generateOne(imagePath: string): Promise<void> {
   console.log(`\n→ [seed] ${imagePath}`);
   const analysis = await analyzeItem([{ bytes: imageBytes, mimeType: mime }]);
 
-  const imageUrl = writeUpload({ id, bytes: imageBytes, ext: uploadExt });
+  const imageUrl = await writeUpload({ id, bytes: imageBytes, ext: uploadExt });
   await withDedalusMachineHooks(`seed:${id}`, async () => {
     const rawVideo = await generateTalkingVideo({
       imageBytes,
@@ -34,7 +34,7 @@ async function generateOne(imagePath: string): Promise<void> {
       durationSec: 10,
     });
     const finalVideo = await makeFinalVideo({ rawVideoMp4: rawVideo });
-    const videoUrl = writeGeneratedVideo({ id, bytes: finalVideo });
+    const videoUrl = await writeGeneratedVideo({ id, bytes: finalVideo });
 
     await prisma.item.create({
       data: {
