@@ -3,8 +3,6 @@ import type { JobState } from "./jobs";
 export function jobToPublicJson(jobId: string, job: JobState): Record<string, unknown> {
   const base = { jobId };
   switch (job.status) {
-    case "pending-analyze":
-      return { ...base, status: job.status };
     case "ready-to-generate":
       return {
         ...base,

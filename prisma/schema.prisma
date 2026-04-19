@@ -7,6 +7,20 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+/// Ephemeral pipeline state between /api/analyze and /api/generate (required on serverless).
+model GenerationJob {
+  id        String    @id
+  status    String
+  payload   Json
+  itemId    String?
+  errorMsg  String?
+  startedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([createdAt])
+}
+
 model Item {
   id             String   @id @default(cuid())
   itemName       String

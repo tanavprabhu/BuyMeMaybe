@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { analyzeItem } from "../../../lib/gemini";
-import { createJob, setJob, type JobListingImage } from "../../../lib/jobs";
+import { commitAnalyzeJob, newJobId, type JobListingImage } from "../../../lib/jobs";
 import { parseAskingPriceUsd, type SellerListingSpecs } from "../../../lib/seller-specs";
 import { writeUpload } from "../../../lib/storage";
 
@@ -51,7 +51,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const jobId = createJob();
+    const jobId = newJobId();
     const seller = readSellerSpecs(form);
 
     const images: JobListingImage[] = [];
@@ -64,7 +64,7 @@ export async function POST(req: Request) {
     }
 
     const analysis = await analyzeItem(
-      images.map((im) => ({ bytes: im.bytes, mimeType: im.mimeType })),
+      images.map((im) => ({ bytes: im.bytes!, mimeType: im.mimeType })),
       { seller },
     );
 
@@ -73,7 +73,12 @@ export async function POST(req: Request) {
       analysis.askingPrice = priceOverride;
     }
 
-    setJob(jobId, { status: "ready-to-generate", analysis, images, sellerListing: seller });
+    await commitAnalyzeJob({
+      id: jobId,
+      analysis,
+      sellerListing: seller,
+      images,
+    });
 
     const imageUrl = images[0]!.url;
     const body: AnalyzeResponse = {

@@ -5,7 +5,6 @@ import { BrandMark } from "../../../components/BrandMark";
 import { addMyItemId } from "../../../lib/client-owned-items";
 
 type JobStatus =
-  | { status: "pending-analyze" }
   | { status: "ready-to-generate" }
   | { status: "generating" }
   | { status: "ready"; itemId: string; videoUrl?: string }

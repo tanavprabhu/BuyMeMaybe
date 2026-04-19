@@ -6,7 +6,7 @@ import { getJob } from "../../../../lib/jobs";
 export async function GET(_req: Request, ctx: { params: Promise<{ jobId: string }> }) {
   const { jobId: rawJobId } = await ctx.params;
   const jobId = rawJobId.trim();
-  const job = getJob(jobId);
+  const job = await getJob(jobId);
   if (!job) return NextResponse.json({ error: "Unknown jobId" }, { status: 404 });
   const body = jobToPublicJson(jobId, job);
   if (job.status === "ready") {

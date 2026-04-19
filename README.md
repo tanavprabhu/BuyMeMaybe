@@ -120,7 +120,7 @@ Environment variables are **server-only** (Next.js API routes); they are not exp
 
 | Variable | Purpose |
 |----------|---------|
-| `DATABASE_URL` | PostgreSQL connection string (Neon, Supabase, etc.). |
+| `DATABASE_URL` | PostgreSQL connection string (Neon, Supabase, etc.). Run **`npx prisma migrate deploy`** so tables include **`GenerationJob`** (pipeline state between analyze and generate; required on Vercel). |
 | `XAI_API_KEY` | Required for analyze + video (from [console.x.ai](https://console.x.ai)). If this is missing online, generation fails until you add it and redeploy. |
 | `BLOB_READ_WRITE_TOKEN` | Required on Vercel for uploads/video files (read-only filesystem under `/var/task`). Use a **Public** Blob store; link it so the token is injected. |
 | `XAI_VISION_MODEL`, `XAI_TEXT_MODEL` | Optional overrides (defaults are Grok fast models in `lib/pipeline.ts`). |
