@@ -9,16 +9,6 @@ AI-generated **square video listings**: snap a photo, add a few details, and the
 
 ---
 
-## The app
-
-1. **Create** — Upload up to 7 photos, pick category + listing lines, optional price/notes.
-2. **Pipeline** — Vision + writer + director prompts (xAI) → Grok Imagine **10s, 1:1** video with on-model VO.
-3. **Feed** — Vertical snap scroll, category filters, likes, highlight links, delete for “your” listings (local marker).
-
-Stack: **Next.js 16** (App Router), **React 19**, **Tailwind 4**, **Prisma + PostgreSQL**, **xAI** (chat/vision + Grok Imagine), **FFmpeg** (square export / optional mux).
-
----
-
 ## Quick start
 
 ### Install
