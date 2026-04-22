@@ -1,6 +1,10 @@
 # BuyMeMaybe
+<img width="200"  alt="BuyMeMaybe" src="https://github.com/user-attachments/assets/03c1b396-ce66-46a7-9e5c-ab8e41ea56dd" />
 
-AI-powered square video listings. Snap a photo, add a few details, and the app generates a short talking-item clip served in a TikTok-style feed.
+A secondhand marketplace where your old items do the talking and sell themselves!
+
+Check-out Our Demo Video Here:
+https://youtu.be/G3_LwvFYknM
 
 **Live:** [buymemaybe.us](https://buymemaybe.us) | **App:** [app.buymemaybe.us](https://app.buymemaybe.us)
 
